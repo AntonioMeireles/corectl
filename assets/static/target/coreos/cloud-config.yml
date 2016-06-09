@@ -1,0 +1,54 @@
+#cloud-config
+
+manage_etc_hosts: "localhost"
+coreos:
+  oem:
+    id: "corectl"
+    version_id: "@@version@@"
+    name: "CoreOS over OS X made simple"
+    home-url: "https://github.com/TheNewNormal/corectl"
+    bug-report-url: "https://github.com/TheNewNormal/corectl/issues/"
+  units:
+  - name: update-engine.service
+    command: stop
+  - name: locksmithd.service
+    command: stop
+  - name: corectl-set-hostname.service
+    command: start
+    content: |
+      [Unit]
+      Description=Sets Hostname from metadata
+      Requires=coreos-setup-environment.service
+      After=coreos-setup-environment.service
+      [Service]
+      Type=oneshot
+      EnvironmentFile=/etc/environment
+      ExecStart=/bin/bash -c "/usr/bin/hostnamectl set-hostname ${HOSTNAME}"
+      [Install]
+      WantedBy=local.target
+  - name: corectl-ssh-key.service
+    command: restart
+    runtime: yes
+    content: |
+      [Unit]
+      Description=Sets SSH key from metadata
+      Requires=coreos-setup-environment.service
+      After=coreos-setup-environment.service
+      [Service]
+      Type=oneshot
+      EnvironmentFile=/etc/environment
+      StandardOutput=journal+console
+      ExecStart=/bin/bash -c "curl -Ls ${ENDPOINT}/setup | \
+        jq -r .VM.InternalSSHkey | update-ssh-keys -a corectl"
+  - name: corectl-coreos-cloudinit.service
+    command: restart
+    runtime: yes
+    content: |
+      [Unit]
+      Requires=coreos-setup-environment.service
+      After=coreos-setup-environment.service
+      [Service]
+      Type=oneshot
+      EnvironmentFile=/etc/environment
+      ExecStart=/bin/bash -c "/usr/bin/coreos-cloudinit \
+                         --from-file /usr/share/oem/corectl.yml"

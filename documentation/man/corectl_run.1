@@ -5,23 +5,23 @@
 
 .SH NAME
 .PP
-corectl\-run \- Starts a new CoreOS instance
+corectl\-run \- Boots a new CoreOS instance
 
 
 .SH SYNOPSIS
 .PP
-\fBcorectl run\fP [OPTIONS]
+\fBcorectl run\fP
 
 
 .SH DESCRIPTION
 .PP
-Starts a new CoreOS instance
+Boots a new CoreOS instance
 
 
 .SH OPTIONS
 .PP
 \fB\-\-cdrom\fP=""
-    append an CDROM (.iso) to VM
+    append an CDROM (ISO) to VM
 
 .PP
 \fB\-\-channel\fP="alpha"
@@ -29,30 +29,26 @@ Starts a new CoreOS instance
 
 .PP
 \fB\-\-cloud\_config\fP=""
-    cloud\-config file location (either a remote URL or a local path)
+    cloud\-config file location (either an URL or a local path)
 
 .PP
-\fB\-\-cpus\fP=1
+\fB\-c\fP, \fB\-\-cpus\fP=1
     VM's vCPUS
 
 .PP
-\fB\-d\fP, \fB\-\-detached\fP[=false]
-    starts the VM in detached (background) mode
-
-.PP
-\fB\-l\fP, \fB\-\-local\fP[=false]
-    consumes whatever image is \fB\fClatest\fR locally instead of looking online unless there's nothing available.
-
-.PP
-\fB\-\-memory\fP=1024
+\fB\-m\fP, \fB\-\-memory\fP=1024
     VM's RAM, in MB, per instance (1024 < memory < 8192)
 
 .PP
 \fB\-n\fP, \fB\-\-name\fP=""
-    names the VM. (if absent defaults to VM's UUID)
+    names the VM. (if unset defaults to VM's UUID)
 
 .PP
-\fB\-\-root\fP=""
+\fB\-o\fP, \fB\-\-offline\fP[=false]
+    doesn't go online to check for newer images than the locally available ones unless there is none available.
+
+.PP
+\fB\-r\fP, \fB\-\-root\fP=""
     append a (persistent) root volume to VM
 
 .PP
@@ -60,11 +56,7 @@ Starts a new CoreOS instance
     VM's default ssh key
 
 .PP
-\fB\-\-tap\fP=""
-    append tap interface to VM
-
-.PP
-\fB\-\-uuid\fP="random"
+\fB\-u\fP, \fB\-\-uuid\fP="random"
     VM's UUID
 
 .PP
@@ -79,7 +71,7 @@ Starts a new CoreOS instance
 .SH OPTIONS INHERITED FROM PARENT COMMANDS
 .PP
 \fB\-\-debug\fP[=false]
-    adds extra verbosity, and options, for debugging purposes and/or power users
+    adds additional verbosity, and options, directed at debugging purposes and power users
 
 
 .SH SEE ALSO

@@ -1,11 +1,11 @@
 ## corectl ls
 
-Lists locally available CoreOS images
+Lists the CoreOS images available locally
 
 ### Synopsis
 
 
-Lists locally available CoreOS images
+Lists the CoreOS images available locally
 
 ```
 corectl ls
@@ -22,9 +22,9 @@ corectl ls
 ### Options inherited from parent commands
 
 ```
-      --debug   adds extra verbosity, and options, for debugging purposes and/or power users
+      --debug   adds additional verbosity, and options, directed at debugging purposes and power users
 ```
 
 ### SEE ALSO
-* [corectl](corectl.md)	 - CoreOS over OSX made simple.
+* [corectl](corectl.md)	 - CoreOS over OS X made simple.
 

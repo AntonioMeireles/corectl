@@ -28,7 +28,7 @@ func TestRepositoriesService_List_authenticatedUser(t *testing.T) {
 		t.Errorf("Repositories.List returned error: %v", err)
 	}
 
-	want := []Repository{{ID: Int(1)}, {ID: Int(2)}}
+	want := []*Repository{{ID: Int(1)}, {ID: Int(2)}}
 	if !reflect.DeepEqual(repos, want) {
 		t.Errorf("Repositories.List returned %+v, want %+v", repos, want)
 	}
@@ -56,7 +56,7 @@ func TestRepositoriesService_List_specifiedUser(t *testing.T) {
 		t.Errorf("Repositories.List returned error: %v", err)
 	}
 
-	want := []Repository{{ID: Int(1)}}
+	want := []*Repository{{ID: Int(1)}}
 	if !reflect.DeepEqual(repos, want) {
 		t.Errorf("Repositories.List returned %+v, want %+v", repos, want)
 	}
@@ -65,20 +65,6 @@ func TestRepositoriesService_List_specifiedUser(t *testing.T) {
 func TestRepositoriesService_List_invalidUser(t *testing.T) {
 	_, _, err := client.Repositories.List("%", nil)
 	testURLParseError(t, err)
-}
-
-func ExampleRepositoriesService_List() {
-	client := NewClient(nil)
-
-	user := "willnorris"
-	opt := &RepositoryListOptions{Type: "owner", Sort: "updated", Direction: "desc"}
-
-	repos, _, err := client.Repositories.List(user, opt)
-	if err != nil {
-		fmt.Println(err)
-	}
-
-	fmt.Printf("Recently updated repositories by %q: %v", user, Stringify(repos))
 }
 
 func TestRepositoriesService_ListByOrg(t *testing.T) {
@@ -101,7 +87,7 @@ func TestRepositoriesService_ListByOrg(t *testing.T) {
 		t.Errorf("Repositories.ListByOrg returned error: %v", err)
 	}
 
-	want := []Repository{{ID: Int(1)}}
+	want := []*Repository{{ID: Int(1)}}
 	if !reflect.DeepEqual(repos, want) {
 		t.Errorf("Repositories.ListByOrg returned %+v, want %+v", repos, want)
 	}
@@ -132,7 +118,7 @@ func TestRepositoriesService_ListAll(t *testing.T) {
 		t.Errorf("Repositories.ListAll returned error: %v", err)
 	}
 
-	want := []Repository{{ID: Int(1)}}
+	want := []*Repository{{ID: Int(1)}}
 	if !reflect.DeepEqual(repos, want) {
 		t.Errorf("Repositories.ListAll returned %+v, want %+v", repos, want)
 	}
@@ -311,12 +297,11 @@ func TestRepositoriesService_ListContributors(t *testing.T) {
 
 	opts := &ListContributorsOptions{Anon: "true", ListOptions: ListOptions{Page: 2}}
 	contributors, _, err := client.Repositories.ListContributors("o", "r", opts)
-
 	if err != nil {
 		t.Errorf("Repositories.ListContributors returned error: %v", err)
 	}
 
-	want := []Contributor{{Contributions: Int(42)}}
+	want := []*Contributor{{Contributions: Int(42)}}
 	if !reflect.DeepEqual(contributors, want) {
 		t.Errorf("Repositories.ListContributors returned %+v, want %+v", contributors, want)
 	}
@@ -358,7 +343,7 @@ func TestRepositoriesService_ListTeams(t *testing.T) {
 		t.Errorf("Repositories.ListTeams returned error: %v", err)
 	}
 
-	want := []Team{{ID: Int(1)}}
+	want := []*Team{{ID: Int(1)}}
 	if !reflect.DeepEqual(teams, want) {
 		t.Errorf("Repositories.ListTeams returned %+v, want %+v", teams, want)
 	}
@@ -380,7 +365,7 @@ func TestRepositoriesService_ListTags(t *testing.T) {
 		t.Errorf("Repositories.ListTags returned error: %v", err)
 	}
 
-	want := []RepositoryTag{
+	want := []*RepositoryTag{
 		{
 			Name: String("n"),
 			Commit: &Commit{
@@ -413,7 +398,7 @@ func TestRepositoriesService_ListBranches(t *testing.T) {
 		t.Errorf("Repositories.ListBranches returned error: %v", err)
 	}
 
-	want := []Branch{{Name: String("master"), Commit: &Commit{SHA: String("a57781"), URL: String("https://api.github.com/repos/o/r/commits/a57781")}}}
+	want := []*Branch{{Name: String("master"), Commit: &Commit{SHA: String("a57781"), URL: String("https://api.github.com/repos/o/r/commits/a57781")}}}
 	if !reflect.DeepEqual(branches, want) {
 		t.Errorf("Repositories.ListBranches returned %+v, want %+v", branches, want)
 	}

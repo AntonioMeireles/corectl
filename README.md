@@ -32,6 +32,8 @@
 
 #### - build it locally (for power users)
 ```
+❯❯❯ mkdir -p ${GOPATH}/src/github.com/TheNewNormal/
+❯❯❯ cd ${GOPATH}/src/github.com/TheNewNormal/
 ❯❯❯ git clone git@github.com:TheNewNormal/corectl.git
 ❯❯❯ cd corectl
 ❯❯❯ make
@@ -68,31 +70,33 @@ that will come handy when you come to play with `docker` volumes later...
 
 ### usage
 ```
-CoreOS over OSX made simple.
-❯❯❯ http://github.com/TheNewNormal/corectl
-
+CoreOS over OS X made simple. <http://github.com/TheNewNormal/corectl>
+Copyright (c) 2015-2016, António Meireles
 
 Usage:
-  corectl [flags]
-  corectl [command]
+    corectl [flags]
+    corectl [command]
 
 Available Commands:
-  rm          Removes one or more CoreOS images from local fs
-  kill        Halts one or more running CoreOS instances
-  ls          Lists locally available CoreOS images
-  load        Loads from an instrumentation file (in TOML, JSON or YAML) one or more CoreOS instances
-  version     Shows corectl version information
-  ps          Lists running CoreOS instances
-  pull        Pulls a CoreOS image from upstream
-  run         Starts a new CoreOS instance
-  ssh         Attach to or run commands inside a running CoreOS instance
+    rm          Remove(s) CoreOS image(s) from the local filesystem
+    kill        Halts one or more running CoreOS instances
+    ls          Lists the CoreOS images available locally
+    load        Loads CoreOS instances defined in an instrumentation file.
+    ps          Lists running CoreOS instances
+    query       Display information about the running CoreOS instances
+    pull        Pulls a CoreOS image from upstream
+    run         Boots a new CoreOS instance
+    server      Operations on the local `corectl` server instance
+    ssh         Attach to or run commands inside a running CoreOS instance
+    put         copy file to inside VM
+    version     Shows running version information
 
 Flags:
-      --debug[=false]: adds extra verbosity, and options, for debugging purposes and/or power users
+      --debug   adds extra verbosity, and options, for debugging purposes and/or power users
 
 Use "corectl [command] --help" for more information about a command.
 
-All flags can also be configured via upper-case environment variables prefixed with "COREOS_"
+All flags can also be set via upper-case environment variables prefixed with "COREOS_"
 For example, "--debug" => "COREOS_DEBUG"
 ```
 > read [here](documentation/markdown/corectl.md) the full
@@ -146,7 +150,7 @@ For example, "--debug" => "COREOS_DEBUG"
  > Regarding `docker`, CoreOS shipped the 1.7 stream in all releases older than
  > the 801.0.0 one. So, if you plan to run any of these releases, in order
  > to talk to CoreOS' docker daemon you'll need on your Mac a matching docker
- client,as Homebrew is already defaulting on docker 1.8.x...
+ client, as Homebrew is already defaulting on docker 1.8.x...
  > ```
  > ❯❯❯ brew remove docker
  > ❯❯❯ brew tap homebrew/versions
@@ -180,6 +184,7 @@ found 2 running VMs, summing 3 vCPUs and 4096MB in use.
   <none>              <none>              6ce2e90b0bc7        4 months ago        2.43 MB
   <none>              <none>
   ```
+
 or ...
 
   ```
@@ -197,6 +202,7 @@ or ...
 - have fun!
 
 ## projects using `corectl`
+
 - [Rimas Mocevicius](https://github.com/rimusz) entire toolset of OS X GUI apps
 is now using `corectl` underneath.
   - [coreos-osx](https://github.com/TheNewNormal/coreos-osx) - **CoreOS VM for OS X**
@@ -206,6 +212,7 @@ is now using `corectl` underneath.
  **Multi node Kubernetes Cluster for OS X**
 
 ## acknowledgements
+
 -  [Michael Steil](https://github.com/mist64) for releasing in the wild his
    awesome [xhyve](https://github.com/mist64/xhyve) lightweight OS X
    virtualization solution and [Jeremy Sequoia](https://github.com/jeremyhu),
@@ -219,6 +226,7 @@ is now using `corectl` underneath.
    prototype that this project supersedes
 
 ## contributing
-`corectl` is an [open source](http://opensource.org/osd) project under the
-[Apache License, Version 2.0](http://opensource.org/licenses/Apache-2.0), ence
-contributions are gladly welcomed!
+
+`corectl` is an [open source](http://opensource.org/osd) project release under
+the [Apache License, Version 2.0](http://opensource.org/licenses/Apache-2.0),
+ence contributions and sugestions are gladly welcomed!

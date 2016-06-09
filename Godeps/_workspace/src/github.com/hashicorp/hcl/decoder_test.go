@@ -59,14 +59,12 @@ func TestDecode_interface(t *testing.T) {
 			"escape.hcl",
 			false,
 			map[string]interface{}{
-				"foo": "bar\"baz\\n",
-			},
-		},
-		{
-			"interpolate_escape.hcl",
-			false,
-			map[string]interface{}{
-				"foo": "${file(\"bing/bong.txt\")}",
+				"foo":          "bar\"baz\\n",
+				"qux":          "back\\slash",
+				"bar":          "new\nline",
+				"qax":          `slash\:colon`,
+				"nested":       `${HH\:mm\:ss}`,
+				"nestedquotes": `${"\"stringwrappedinquotes\""}`,
 			},
 		},
 		{
@@ -110,6 +108,19 @@ func TestDecode_interface(t *testing.T) {
 			"multiline.json",
 			false,
 			map[string]interface{}{"foo": "bar\nbaz"},
+		},
+		{
+			"null_strings.json",
+			false,
+			map[string]interface{}{
+				"module": []map[string]interface{}{
+					map[string]interface{}{
+						"app": []map[string]interface{}{
+							map[string]interface{}{"foo": ""},
+						},
+					},
+				},
+			},
 		},
 		{
 			"scientific.json",
@@ -406,9 +417,12 @@ func TestDecode_flatMap(t *testing.T) {
 }
 
 func TestDecode_structure(t *testing.T) {
+	type Embedded interface{}
+
 	type V struct {
-		Key int
-		Foo string
+		Embedded `hcl:"-"`
+		Key      int
+		Foo      string
 	}
 
 	var actual V
