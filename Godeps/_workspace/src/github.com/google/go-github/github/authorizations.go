@@ -35,6 +35,9 @@ const (
 	ScopeReadPublicKey  Scope = "read:public_key"
 	ScopeWritePublicKey Scope = "write:public_key"
 	ScopeAdminPublicKey Scope = "admin:public_key"
+	ScopeReadGPGKey     Scope = "read:gpg_key"
+	ScopeWriteGPGKey    Scope = "write:gpg_key"
+	ScopeAdminGPGKey    Scope = "admin:gpg_key"
 )
 
 // AuthorizationsService handles communication with the authorization related
@@ -119,7 +122,7 @@ func (a AuthorizationUpdateRequest) String() string {
 // List the authorizations for the authenticated user.
 //
 // GitHub API docs: https://developer.github.com/v3/oauth_authorizations/#list-your-authorizations
-func (s *AuthorizationsService) List(opt *ListOptions) ([]Authorization, *Response, error) {
+func (s *AuthorizationsService) List(opt *ListOptions) ([]*Authorization, *Response, error) {
 	u := "authorizations"
 	u, err := addOptions(u, opt)
 	if err != nil {
@@ -131,7 +134,7 @@ func (s *AuthorizationsService) List(opt *ListOptions) ([]Authorization, *Respon
 		return nil, nil, err
 	}
 
-	auths := new([]Authorization)
+	auths := new([]*Authorization)
 	resp, err := s.client.Do(req, auths)
 	if err != nil {
 		return nil, resp, err
