@@ -35,7 +35,6 @@ import (
 	"golang.org/x/crypto/openpgp"
 	"golang.org/x/crypto/openpgp/clearsign"
 
-	"github.com/TheNewNormal/corectl/host/darwin/misc/image"
 	"github.com/TheNewNormal/corectl/host/session"
 	"github.com/TheNewNormal/corectl/target/coreos"
 
@@ -181,67 +180,6 @@ func localize(channel, version string) (b string, err error) {
 		}
 	}()
 	for fn, location := range files {
-		// OEMify
-		if strings.HasSuffix(fn, "cpio.gz") {
-			var (
-				i, temp *os.File
-				r       *image.Reader
-				w       *image.Writer
-			)
-
-			if i, err = os.Open(location); err != nil {
-				return
-			}
-			defer i.Close()
-
-			if r, err = image.NewReader(i); err != nil {
-				return
-			}
-			defer r.Close()
-
-			temp, err = ioutil.TempFile(session.Caller.TmpDir(), "coreos")
-			if err != nil {
-				return
-			}
-			defer temp.Close()
-
-			if w, err = image.NewWriter(temp); err != nil {
-				return
-			}
-
-			for _, d := range []string{"usr", "usr/share", "usr/share/oem",
-				"usr/share/oem/bin"} {
-				if err = w.WriteDir(d, 0755); err != nil {
-					return
-				}
-			}
-
-			if err = w.WriteToFile(bytes.NewBufferString(coreos.CoreOEMsetupBootstrap),
-				"usr/share/oem/cloud-config.yml", 0644); err != nil {
-				return
-			}
-
-			if err = w.WriteToFile(bytes.NewBufferString(
-				strings.Replace(coreos.CoreOEMsetup, "@@version@@", version, -1)),
-				"usr/share/oem/corectl.yml", 0644); err != nil {
-				return
-			}
-
-			if err = w.WriteToFile(bytes.NewBufferString(coreos.CoreOEMsetupEnv),
-				"usr/share/oem/bin/coreos-setup-environment",
-				0755); err != nil {
-				return
-			}
-			defer w.Close()
-
-			if err = image.Copy(w, r); err != nil {
-				return
-			}
-			if err = os.Rename(temp.Name(), location); err != nil {
-				return
-			}
-
-		}
 		if err = os.Rename(location,
 			fmt.Sprintf("%s/%s", destination, fn)); err != nil {
 			return version, err

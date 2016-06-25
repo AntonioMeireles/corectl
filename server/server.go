@@ -16,14 +16,20 @@
 package server
 
 import (
+	"bufio"
 	"fmt"
+	"io/ioutil"
 	"os"
+	"os/exec"
 	"os/signal"
+	"path"
+	"path/filepath"
 	"sync"
 	"syscall"
 
 	"github.com/TheNewNormal/corectl/host/session"
 	"github.com/TheNewNormal/corectl/release"
+	"github.com/TheNewNormal/corectl/target/coreos"
 	"github.com/blang/semver"
 	"github.com/helm/helm/log"
 	"github.com/valyala/gorpc"
@@ -106,4 +112,35 @@ func Start() (err error) {
 
 	log.Info("gone!")
 	return
+}
+
+func ConfigDrive() (err error) {
+	var tmpDir, user_data string
+
+	if tmpDir, err = ioutil.TempDir(session.Caller.TmpDir(),
+		"coreos"); err != nil {
+		return
+	}
+
+	defer func() {
+		os.RemoveAll(tmpDir)
+	}()
+
+	user_data = path.Join(tmpDir, "openstack/latest/user_data")
+	if err = os.MkdirAll(filepath.Dir(user_data), 0644); err != nil {
+		return
+	}
+
+	h, _ := os.Create(user_data)
+	w := bufio.NewWriter(h)
+	defer h.Close()
+
+	fmt.Fprintf(w, coreos.CoreOEMsetupBootstrap)
+	w.Flush()
+
+	cmd := exec.Command("hdiutil", "makehybrid", "-iso", "-joliet", "-ov",
+		"-default-volume-name", "config-2",
+		"-o", session.Caller.ConfigISO(), tmpDir)
+
+	return cmd.Run()
 }

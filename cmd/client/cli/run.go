@@ -78,8 +78,10 @@ func vmBootstrap(args *viper.Viper) (vm *server.VMInfo, err error) {
 
 	vm.OfflineMode = args.GetBool("offline")
 	vm.Cpus = args.GetInt("cpus")
-	vm.Extra = args.GetString("extra")
+	vm.AddToHypervisor = args.GetString("extra")
+	vm.AddToKernel = args.GetString("boot")
 	vm.SSHkey = args.GetString("sshkey")
+	vm.SharedHomedir = args.GetBool("shared-homedir")
 	vm.Root = -1
 	vm.Pid = -1
 
@@ -126,9 +128,7 @@ func vmBootstrap(args *viper.Viper) (vm *server.VMInfo, err error) {
 		return
 	}
 
-	if err = vm.ValidateCDROM(args.GetString("cdrom")); err != nil {
-		return
-	}
+	vm.ValidateCDROM(session.Caller.ConfigISO())
 
 	if err = vm.ValidateVolumes([]string{args.GetString("root")},
 		true); err != nil {
@@ -166,18 +166,18 @@ func runFlagsDefaults(setFlag *pflag.FlagSet) {
 		"cloud-config file location (either an URL or a local path)")
 	setFlag.StringP("sshkey", "k", "", "VM's default ssh key")
 	setFlag.StringP("root", "r", "", "append a (persistent) root volume to VM")
-	setFlag.StringP("cdrom", "a", "", "append an CDROM (ISO) to VM")
 	setFlag.StringSliceP("volume", "p", nil, "append disk volumes to VM")
 	setFlag.BoolP("offline", "o", false,
 		"doesn't go online to check for newer images than the "+
 			"locally available ones unless there is none available.")
 	setFlag.StringP("name", "n", "",
 		"names the VM (default is VM's UUID)")
-
+	setFlag.BoolP("shared-homedir", "H", false,
+		"mounts (via NFS) host's homedir inside VM")
+	setFlag.StringP("extra", "x", "", "additional arguments to the hypervisor")
+	setFlag.StringP("boot", "b", "", "additional arguments to the kernel boot")
 	// available but hidden...
-	setFlag.StringP("extra", "e", "", "additional arguments to the hypervisor")
 	setFlag.StringP("tap", "t", "", "append tap interface to VM")
-	setFlag.MarkHidden("extra")
 	setFlag.MarkHidden("tap")
 }
 

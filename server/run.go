@@ -19,7 +19,6 @@ import (
 	"crypto/rand"
 	"crypto/rsa"
 	"crypto/x509"
-	"encoding/json"
 	"encoding/pem"
 	"fmt"
 	"io/ioutil"
@@ -36,6 +35,9 @@ import (
 	"time"
 
 	"github.com/TheNewNormal/corectl/host/session"
+	"github.com/TheNewNormal/corectl/target/coreos"
+	"github.com/braintree/manners"
+	"github.com/coreos/go-systemd/unit"
 	"github.com/deis/pkg/log"
 	"github.com/dustin/go-humanize"
 	"golang.org/x/crypto/ssh"
@@ -44,19 +46,21 @@ import (
 type (
 	// VMInfo - per VM settings
 	VMInfo struct {
-		Name, Channel, Version, UUID           string
-		MacAddress, PublicIP                   string
-		InternalSSHkey, InternalSSHprivate     string
-		Cpus, Memory, Pid, Root                int
-		SSHkey, CloudConfig, CClocation, Extra string `json:",omitempty"`
-		Ethernet                               []NetworkInterface
-		Storage                                StorageAssets `json:",omitempty"`
-		OfflineMode                            bool
-		CreationTime                           time.Time
-		publicIPCh                             chan string
-		errCh                                  chan error
-		done                                   chan struct{}
-		exec                                   *exec.Cmd
+		Name, Channel, Version, UUID       string
+		MacAddress, PublicIP               string
+		InternalSSHkey, InternalSSHprivate string
+		Cpus, Memory, Pid, Root            int
+		SSHkey, CloudConfig, CClocation    string `json:",omitempty"`
+		AddToHypervisor, AddToKernel       string `json:",omitempty"`
+		Ethernet                           []NetworkInterface
+		Storage                            StorageAssets `json:",omitempty"`
+		SharedHomedir, OfflineMode         bool
+		CreationTime                       time.Time
+		publicIPCh                         chan string
+		errCh                              chan error
+		done                               chan struct{}
+		exec                               *exec.Cmd
+		apiServer                          *manners.GracefulServer
 	}
 	// NetworkInterface ...
 	NetworkInterface struct {
@@ -86,6 +90,8 @@ const (
 	Attached = true
 	Detached = false
 )
+
+var ServerTimeout = 30 * time.Second
 
 // ValidateCDROM ...
 func (vm *VMInfo) ValidateCDROM(path string) (err error) {
@@ -212,14 +218,14 @@ func (vm *VMInfo) SSHkeyGen() (err error) {
 	}
 
 	vm.InternalSSHprivate = string(pem.EncodeToMemory(&secretBlk))
-	vm.InternalSSHkey = string(ssh.MarshalAuthorizedKey(public))
+	vm.InternalSSHkey =
+		strings.TrimSuffix(string(ssh.MarshalAuthorizedKey(public)), "\n")
 	return
 }
 
 func (vm *VMInfo) assembleBootPayload() (xArgs []string, err error) {
 	var (
-		cmdline = fmt.Sprintf("earlyprintk=serial console=ttyS0 "+
-			"coreos.autologin uuid=%s", vm.UUID)
+		cmdline = "earlyprintk=serial console=ttyS0 coreos.autologin"
 		prefix  = "coreos_production_pxe"
 		vmlinuz = fmt.Sprintf("%s/%s/%s/%s.vmlinuz",
 			session.Caller.ImageStore(), vm.Channel, vm.Version,
@@ -253,7 +259,13 @@ func (vm *VMInfo) assembleBootPayload() (xArgs []string, err error) {
 	if endpoint, err = vm.metadataService(); err != nil {
 		return
 	}
-	cmdline = fmt.Sprintf("%s endpoint=%s", cmdline, endpoint)
+	cmdline = fmt.Sprintf("%s corectl.endpoint=%s corectl.ssh=\"%s\" "+
+		"corectl.hostname=%s ", cmdline, endpoint,
+		vm.InternalSSHkey, vm.Name)
+
+	if vm.SharedHomedir {
+		cmdline = fmt.Sprintf("%s corectl.sharedhomedir=true", cmdline)
+	}
 
 	if vm.CloudConfig != "" {
 		if vm.CClocation == Local {
@@ -265,8 +277,12 @@ func (vm *VMInfo) assembleBootPayload() (xArgs []string, err error) {
 		}
 	}
 
-	if vm.Extra != "" {
-		instr = append(instr, vm.Extra)
+	if vm.AddToHypervisor != "" {
+		instr = append(instr, vm.AddToHypervisor)
+	}
+
+	if vm.AddToKernel != "" {
+		cmdline = fmt.Sprintf("%s %s", cmdline, vm.AddToKernel)
 	}
 
 	for v, vv := range vm.Ethernet {
@@ -297,10 +313,10 @@ func (vm *VMInfo) assembleBootPayload() (xArgs []string, err error) {
 
 func (vm *VMInfo) metadataService() (endpoint string, err error) {
 	var (
-		free         net.Listener
-		foundGuestIP sync.Once
-		mux, root    = http.NewServeMux(), "/" + vm.Name
-		rIP          = func(s string) string {
+		free      net.Listener
+		pong      sync.Once
+		mux, root = http.NewServeMux(), "/" + vm.Name
+		rIP       = func(s string) string {
 			return strings.Split(s, ":")[0]
 		}
 		netcfg = net.IPNet{
@@ -336,40 +352,49 @@ func (vm *VMInfo) metadataService() (endpoint string, err error) {
 				}
 			})
 	}
-	mux.HandleFunc(root+"/setup",
+	mux.HandleFunc(root+"/homedir",
 		func(w http.ResponseWriter, r *http.Request) {
 			if isAllowed(rIP(r.RemoteAddr), w) {
-				type Msg struct {
-					VM     *VMInfo
-					Caller *session.Context
-				}
-				json.NewEncoder(w).Encode(&Msg{vm, session.Caller})
-				foundGuestIP.Do(func() {
+				nfs := strings.Replace(coreos.CoreOEMsharedHomedir,
+					"((server))", session.Caller.Address, -1)
+				nfs = strings.Replace(nfs,
+					"((path))", session.Caller.HomeDir, -1)
+				nfs = strings.Replace(nfs, "((path_escaped))",
+					unit.UnitNamePathEscape(session.Caller.HomeDir), -1)
+				w.Write([]byte(nfs))
+			}
+		})
+	mux.HandleFunc(root+"/ping",
+		func(w http.ResponseWriter, r *http.Request) {
+			if isAllowed(rIP(r.RemoteAddr), w) {
+				w.Write([]byte("pong"))
+				pong.Do(func() {
 					vm.publicIPCh <- rIP(r.RemoteAddr)
 				})
 			}
 		})
 
-	srv := &http.Server{
+	vm.apiServer = manners.NewWithServer(&http.Server{
 		Addr:    fmt.Sprintf(":%v", free.Addr().(*net.TCPAddr).Port),
 		Handler: mux,
-	}
+	})
 	go func() {
 		defer free.Close()
-		srv.ListenAndServe()
+		vm.apiServer.ListenAndServe()
 	}()
 
 	return fmt.Sprintf("http://%v%v%v",
-		session.Caller.Address, srv.Addr, root), err
+		session.Caller.Address, vm.apiServer.Addr, root), err
 }
 
 func (vm *VMInfo) halt() {
+	vm.apiServer.Close()
 	// Try to gracefully terminate the process.
 	if err := vm.exec.Process.Signal(syscall.SIGTERM); err != nil {
 		log.Err(err.Error())
 	}
 	select {
-	case <-time.After(15 * time.Second):
+	case <-time.After(ServerTimeout):
 		log.Err("Attempting to halt %v (%v) with SIGTERM timed out, "+
 			"SIGKILLing it now.", vm.UUID, vm.exec.Process.Pid)
 		if err := vm.exec.Process.Kill(); err != nil {

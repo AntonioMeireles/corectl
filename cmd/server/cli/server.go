@@ -17,11 +17,13 @@ package cli
 
 import (
 	"fmt"
+	"os"
 
 	"github.com/TheNewNormal/corectl/host/session"
 	"github.com/TheNewNormal/corectl/release"
 	"github.com/TheNewNormal/corectl/release/cli"
 	"github.com/TheNewNormal/corectl/server"
+	"github.com/deis/pkg/log"
 	"github.com/everdev/mack"
 	"github.com/spf13/cobra"
 )
@@ -60,6 +62,15 @@ func serverStartCommand(cmd *cobra.Command, args []string) (err error) {
 		return fmt.Errorf("corectld already started (with pid %v)",
 			srv.(*release.Info).Pid)
 	}
+
+	_, err = os.Stat(session.Caller.ConfigISO())
+	if os.IsNotExist(err) || session.Caller.CmdLine.GetBool("force") {
+		if err = server.ConfigDrive(); err != nil {
+			return
+		}
+		log.Info("Built config-drive ISO (%s)", session.Caller.ConfigISO())
+	}
+
 	if !session.Caller.Privileged {
 		if err = mack.Tell("System Events",
 			"do shell script \""+
@@ -92,5 +103,7 @@ func serverStartCommand(cmd *cobra.Command, args []string) (err error) {
 func init() {
 	serverStartCmd.Flags().StringP("user", "u", "",
 		"sets the user that will 'own' the corectld instance")
+	serverStartCmd.Flags().BoolP("force", "f", false,
+		"rebuilds config drive iso even if a suitable one is already present")
 	rootCmd.AddCommand(shutdownCmd, statusCmd, serverStartCmd)
 }

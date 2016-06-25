@@ -206,3 +206,7 @@ func ExecutableFolder() string {
 	s, _ := osext.ExecutableFolder()
 	return s
 }
+
+func (ctx *Context) ConfigISO() string {
+	return filepath.Join(Caller.ConfigDir(), "config+"+release.Version+".iso")
+}

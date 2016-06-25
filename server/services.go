@@ -53,7 +53,8 @@ func (cfg *Config) Running() (interface{}, error) {
 }
 
 func Query(funcName string, request interface{}) (interface{}, error) {
-	return session.Caller.RPCdispatcher.Call(funcName, request)
+	return session.Caller.RPCdispatcher.CallTimeout(funcName, request,
+		ServerTimeout)
 }
 
 func shutdown() (err error) {
@@ -90,7 +91,7 @@ func run(vm *VMInfo) (booted *VMInfo, err error) {
 		"corectld.runner"), payload...)
 
 	go func() {
-		timeout := time.After(30 * time.Second)
+		timeout := time.After(ServerTimeout)
 		select {
 		case <-timeout:
 			vm.Pid = vm.exec.Process.Pid

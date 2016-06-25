@@ -16,8 +16,18 @@
 			"Rev": "e64c75d1c910cd81c8caa1f2cc2c6409dd65af81"
 		},
 		{
+			"ImportPath": "github.com/braintree/manners",
+			"Comment": "0.4.0-15-g82a8879",
+			"Rev": "82a8879fc5fd0381fa8b2d8033b19bf255252088"
+		},
+		{
 			"ImportPath": "github.com/bugsnag/osext",
 			"Rev": "0dd3f918b21bec95ace9dc86c7e70266cfc5c702"
+		},
+		{
+			"ImportPath": "github.com/coreos/go-systemd/unit",
+			"Comment": "v9-8-gb32b846",
+			"Rev": "b32b8467dbea18858bfebf65c1a6a761090f2c31"
 		},
 		{
 			"ImportPath": "github.com/cpuguy83/go-md2man/md2man",
