@@ -36,19 +36,22 @@ all: cmd/client cmd/server docs
 	@git status
 
 cmd/client:
+	mkdir -p $(BUILD_DIR)
 	rm -rf $(BUILD_DIR)/$(PROG)
 	cd $@; $(GOBUILD) -o $(BUILD_DIR)/$(PROG) \
 		-gcflags "$(GO_GCFLAGS)" -ldflags "$(GO_LDFLAGS)"
 	@touch $@
 
 cmd/server:
+	mkdir -p $(BUILD_DIR)
 	rm -rf $(BUILD_DIR)/$(DAEMON)
 	cd $@; $(GOBUILD) -o $(BUILD_DIR)/$(DAEMON) \
 		-gcflags "$(GO_GCFLAGS)" -ldflags "$(GO_LDFLAGS)"
 	@touch $@
 
 assets:
-	@cd assets; rm -f assets_vfsdata.go ; \
+	@cd assets; \
+		rm -f assets_vfsdata.go ; \
 		$(GODEP) go run assets_generator.go -tags=dev
 
 clean: assets
@@ -70,6 +73,7 @@ dependencies_update:
 docs: cmd/server cmd/client documentation/markdown documentation/man
 
 hyperkit: force
+	mkdir -p $(BUILD_DIR)
 	# implies...
 	# - brew install opam
     # - opam init --yes
@@ -80,6 +84,7 @@ hyperkit: force
 	rm -rf $@
 	git clone $(HYPERKIT_GIT)
 	cd $@; git checkout $(HYPERKIT_COMMIT) ; make clean ; make all
+	mkdir -p bin/
 	cp $@/build/com.docker.hyperkit bin/corectld.runner
 
 documentation/man: force

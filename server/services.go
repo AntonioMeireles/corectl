@@ -151,7 +151,10 @@ func uuid2mac(input []string) (output []string, err error) {
 			// XXX
 			if MAC, err =
 				uuid2ip.GuestMACfromUUID(UUID); err == nil {
+				// if ip, err = uuid2ip.GuestIPfromMAC(MAC); err == nil {
+				// 	log.Info("GUEST IP will be %v", ip)
 				break
+				// }
 			}
 			fmt.Println("=>", original, err)
 			if original != "random" {

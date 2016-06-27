@@ -61,6 +61,10 @@ func loadCommand(cmd *cobra.Command, args []string) (err error) {
 		setup   = viper.New()
 	)
 
+	if _, err = server.Daemon.Running(); err != nil {
+		return session.ErrServerUnreachable
+	}
+
 	if f, err = ioutil.ReadFile(def); err != nil {
 		return
 	}

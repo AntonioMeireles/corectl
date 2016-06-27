@@ -19,6 +19,7 @@ import (
 	"crypto/rand"
 	"crypto/rsa"
 	"crypto/x509"
+	"encoding/json"
 	"encoding/pem"
 	"fmt"
 	"io/ioutil"
@@ -36,8 +37,9 @@ import (
 
 	"github.com/TheNewNormal/corectl/host/session"
 	"github.com/TheNewNormal/corectl/target/coreos"
-	"github.com/braintree/manners"
+	"github.com/coreos/fuze/config"
 	"github.com/coreos/go-systemd/unit"
+	"github.com/coreos/ignition/config/types"
 	"github.com/deis/pkg/log"
 	"github.com/dustin/go-humanize"
 	"golang.org/x/crypto/ssh"
@@ -60,7 +62,6 @@ type (
 		errCh                              chan error
 		done                               chan struct{}
 		exec                               *exec.Cmd
-		apiServer                          *manners.GracefulServer
 	}
 	// NetworkInterface ...
 	NetworkInterface struct {
@@ -91,7 +92,7 @@ const (
 	Detached = false
 )
 
-var ServerTimeout = 30 * time.Second
+var ServerTimeout = 25 * time.Second
 
 // ValidateCDROM ...
 func (vm *VMInfo) ValidateCDROM(path string) (err error) {
@@ -259,9 +260,10 @@ func (vm *VMInfo) assembleBootPayload() (xArgs []string, err error) {
 	if endpoint, err = vm.metadataService(); err != nil {
 		return
 	}
-	cmdline = fmt.Sprintf("%s corectl.endpoint=%s corectl.ssh=\"%s\" "+
-		"corectl.hostname=%s ", cmdline, endpoint,
-		vm.InternalSSHkey, vm.Name)
+
+	cmdline = fmt.Sprintf("%s corectl.endpoint=%s  "+
+		"corectl.hostname=%s coreos.first_boot=1 coreos.config.url=%s",
+		cmdline, endpoint, vm.Name, endpoint+"/ignition")
 
 	if vm.SharedHomedir {
 		cmdline = fmt.Sprintf("%s corectl.sharedhomedir=true", cmdline)
@@ -315,7 +317,9 @@ func (vm *VMInfo) metadataService() (endpoint string, err error) {
 	var (
 		free      net.Listener
 		pong      sync.Once
-		mux, root = http.NewServeMux(), "/" + vm.Name
+		dataOut   []byte
+		cfgIn     types.Config
+		mux, root = http.NewServeMux(), "/" + vm.UUID
 		rIP       = func(s string) string {
 			return strings.Split(s, ":")[0]
 		}
@@ -352,6 +356,28 @@ func (vm *VMInfo) metadataService() (endpoint string, err error) {
 				}
 			})
 	}
+
+	cfgTemp := strings.Replace(coreos.CoreOSIgnitionTmpl,
+		"__vm.InternalSSHkey__", vm.InternalSSHkey, -1)
+	cfgTemp = strings.Replace(cfgTemp,
+		"__vm.Name__", vm.Name, -1)
+	cfgTemp = strings.Replace(cfgTemp,
+		"__corectl.Version__", Daemon.Meta.Version, -1)
+	if cfgIn, err = config.ParseAsV2_0_0([]byte(cfgTemp)); err != nil {
+		return
+	}
+	if dataOut, err = json.MarshalIndent(&cfgIn, "", "  "); err != nil {
+		return
+	}
+	dataOut = append(dataOut, '\n')
+
+	mux.HandleFunc(root+"/ignition",
+		func(w http.ResponseWriter, r *http.Request) {
+			if isAllowed(rIP(r.RemoteAddr), w) {
+				w.Write([]byte(dataOut))
+			}
+		})
+
 	mux.HandleFunc(root+"/homedir",
 		func(w http.ResponseWriter, r *http.Request) {
 			if isAllowed(rIP(r.RemoteAddr), w) {
@@ -364,31 +390,31 @@ func (vm *VMInfo) metadataService() (endpoint string, err error) {
 				w.Write([]byte(nfs))
 			}
 		})
+
 	mux.HandleFunc(root+"/ping",
 		func(w http.ResponseWriter, r *http.Request) {
 			if isAllowed(rIP(r.RemoteAddr), w) {
-				w.Write([]byte("pong"))
+				w.Write([]byte("pong\n"))
 				pong.Do(func() {
 					vm.publicIPCh <- rIP(r.RemoteAddr)
 				})
 			}
 		})
 
-	vm.apiServer = manners.NewWithServer(&http.Server{
+	endpointServe := &http.Server{
 		Addr:    fmt.Sprintf(":%v", free.Addr().(*net.TCPAddr).Port),
 		Handler: mux,
-	})
+	}
 	go func() {
 		defer free.Close()
-		vm.apiServer.ListenAndServe()
+		endpointServe.ListenAndServe()
 	}()
 
 	return fmt.Sprintf("http://%v%v%v",
-		session.Caller.Address, vm.apiServer.Addr, root), err
+		session.Caller.Address, endpointServe.Addr, root), err
 }
 
 func (vm *VMInfo) halt() {
-	vm.apiServer.Close()
 	// Try to gracefully terminate the process.
 	if err := vm.exec.Process.Signal(syscall.SIGTERM); err != nil {
 		log.Err(err.Error())
@@ -484,14 +510,14 @@ func (volumes *StorageAssets) PrettyPrint(root int) {
 	if len(volumes.CDDrives)+len(volumes.HardDrives) > 0 {
 		fmt.Println("  Volumes:")
 		for a, b := range volumes.CDDrives {
-			fmt.Printf("   /dev/cdrom%v (%s)\n", a, b.Path)
+			fmt.Printf("   /dev/cdrom%v\t%s\n", a, b.Path)
 		}
 		for a, b := range volumes.HardDrives {
 			i, _ := strconv.Atoi(a)
 			if i != root {
-				fmt.Printf("   /dev/vd%v (%s)\n", string(i+'a'), b.Path)
+				fmt.Printf("   /dev/vd%v\t%s\n", string(i+'a'), b.Path)
 			} else {
-				fmt.Printf("   /,/dev/vd%v (%s)\n", string(i+'a'), b.Path)
+				fmt.Printf("   /,/dev/vd%v\t%s\n", string(i+'a'), b.Path)
 			}
 		}
 	}

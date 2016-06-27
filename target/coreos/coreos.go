@@ -35,8 +35,8 @@ const defaultChannel = "alpha"
 const defaultVersion = "latest"
 
 var (
-	GPGLongID             = "50E0885593D2DCB4"
-	GPGKey                = assets.Contents("target/coreos/CoreOSkey.public")
-	CoreOEMsetupBootstrap = assets.Contents("target/coreos/cloud-config.yml")
-	CoreOEMsharedHomedir  = assets.Contents("target/coreos/homedir.yml")
+	GPGLongID            = "50E0885593D2DCB4"
+	GPGKey               = assets.Contents("target/coreos/CoreOSkey.public")
+	CoreOEMsharedHomedir = assets.Contents("target/coreos/homedir.yml.tmpl")
+	CoreOSIgnitionTmpl   = assets.Contents("target/coreos/corectl.ignition.yml.tmpl")
 )

@@ -62,18 +62,21 @@ func runCommand(cmd *cobra.Command, args []string) (err error) {
 }
 
 func vmBootstrap(args *viper.Viper) (vm *server.VMInfo, err error) {
-	pSlice := func(plain []string) []string {
-		// getting around https://github.com/spf13/viper/issues/112
-		var sliced []string
-		for _, x := range plain {
-			strip := strings.Replace(
-				strings.Replace(x, "]", "", -1), "[", "", -1)
-			for _, y := range strings.Split(strip, ",") {
-				sliced = append(sliced, y)
+	var (
+		i      interface{}
+		pSlice = func(plain []string) []string {
+			// getting around https://github.com/spf13/viper/issues/112
+			var sliced []string
+			for _, x := range plain {
+				strip := strings.Replace(
+					strings.Replace(x, "]", "", -1), "[", "", -1)
+				for _, y := range strings.Split(strip, ",") {
+					sliced = append(sliced, y)
+				}
 			}
+			return sliced
 		}
-		return sliced
-	}
+	)
 	vm = new(server.VMInfo)
 
 	vm.OfflineMode = args.GetBool("offline")
@@ -96,16 +99,15 @@ func vmBootstrap(args *viper.Viper) (vm *server.VMInfo, err error) {
 		vm.UUID = uuid.NewV4().String()
 	}
 
-	if vm.Name == "" {
-		vm.Name = vm.UUID
-	}
-
-	var i interface{}
 	if i, err = server.Query("vm:uuid2mac",
 		[]string{vm.UUID, args.GetString("uuid")}); err != nil {
 		return
 	}
 	vm.MacAddress, vm.UUID = i.([]string)[0], i.([]string)[1]
+
+	if vm.Name == "" {
+		vm.Name = vm.UUID
+	}
 
 	vm.Memory = args.GetInt("memory")
 	if vm.Memory < 1024 {
@@ -128,7 +130,8 @@ func vmBootstrap(args *viper.Viper) (vm *server.VMInfo, err error) {
 		return
 	}
 
-	vm.ValidateCDROM(session.Caller.ConfigISO())
+	// vm.ValidateCDROM(session.Caller.ConfigISO())
+	vm.ValidateCDROM("")
 
 	if err = vm.ValidateVolumes([]string{args.GetString("root")},
 		true); err != nil {
