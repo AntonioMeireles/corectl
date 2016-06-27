@@ -18,17 +18,17 @@ package cli
 import (
 	"fmt"
 
+	"github.com/TheNewNormal/corectl/cmd/common"
 	"github.com/TheNewNormal/corectl/host/session"
-	shared "github.com/TheNewNormal/corectl/release/cli"
 	"github.com/helm/helm/log"
 	"github.com/spf13/cobra"
 )
 
-var rootCmd = shared.RootCmdTmpl
+var rootCmd = common.RootCmdTmpl
 
 // Main cli entry point
 func Main() (err error) {
-	return shared.STARTup(rootCmd)
+	return common.STARTup(rootCmd)
 }
 
 func init() {
@@ -47,5 +47,5 @@ func init() {
 		}
 		return session.Caller.NormalizeOnDiskLayout()
 	}
-	shared.InitTmpl(rootCmd)
+	common.InitTmpl(rootCmd)
 }

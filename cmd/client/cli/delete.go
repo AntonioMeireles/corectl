@@ -19,8 +19,8 @@ import (
 	"github.com/blang/semver"
 	"github.com/helm/helm/log"
 
+	"github.com/TheNewNormal/corectl/cmd/common"
 	"github.com/TheNewNormal/corectl/host/session"
-	shared "github.com/TheNewNormal/corectl/release/cli"
 	"github.com/TheNewNormal/corectl/server"
 	"github.com/TheNewNormal/corectl/target/coreos"
 	"github.com/spf13/cobra"
@@ -31,7 +31,7 @@ var (
 		Use:     "rm",
 		Aliases: []string{"rmi"},
 		Short:   "Remove(s) CoreOS image(s) from the local filesystem",
-		PreRunE: shared.DefaultPreRunE,
+		PreRunE: common.DefaultPreRunE,
 		RunE:    rmCommand,
 	}
 )

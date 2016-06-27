@@ -13,7 +13,7 @@
 // limitations under the License.
 //
 
-package shared
+package common
 
 import (
 	"encoding/json"

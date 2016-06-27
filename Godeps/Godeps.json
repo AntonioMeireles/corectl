@@ -137,6 +137,16 @@
 			"Rev": "879c5887cd475cd7864858769793b2ceb0d44feb"
 		},
 		{
+			"ImportPath": "github.com/shirou/gopsutil/internal/common",
+			"Comment": "v2.1-7-g2728d81",
+			"Rev": "2728d81cdef579d6ed88d2fd5c71e85aa83eaba8"
+		},
+		{
+			"ImportPath": "github.com/shirou/gopsutil/mem",
+			"Comment": "v2.1-7-g2728d81",
+			"Rev": "2728d81cdef579d6ed88d2fd5c71e85aa83eaba8"
+		},
+		{
 			"ImportPath": "github.com/shurcooL/httpfs/vfsutil",
 			"Rev": "f4a60bdbdd5a8f203c1ad5b6c95232f346eae1f5"
 		},

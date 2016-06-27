@@ -18,9 +18,9 @@ package cli
 import (
 	"fmt"
 
+	"github.com/TheNewNormal/corectl/cmd/common"
 	"github.com/TheNewNormal/corectl/host/session"
 	"github.com/TheNewNormal/corectl/release"
-	"github.com/TheNewNormal/corectl/release/cli"
 	"github.com/TheNewNormal/corectl/server"
 	"github.com/everdev/mack"
 	"github.com/spf13/cobra"
@@ -41,7 +41,7 @@ var (
 	statusCmd = &cobra.Command{
 		Use:   "status",
 		Short: "Shows corectld status",
-		RunE:  shared.PScommand,
+		RunE:  common.PScommand,
 	}
 )
 

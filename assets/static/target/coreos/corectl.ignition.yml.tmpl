@@ -92,3 +92,20 @@ systemd:
         /usr/bin/coreos-cloudinit -from-url $${BASH_REMATCH[1]}/homedir "
       [Install]
       WantedBy=remote-fs.target
+  - name: outter-connectivity-check.service
+    enable: true
+    contents: |
+      [Unit]
+      Description=Check that VM actually has a path the the outter world
+      Requires=phone-home.service
+      After=phone-home.service
+      [Service]
+      Type=oneshot
+      RemainAfterExit=yes
+      StandardOutput=journal+console
+      ExecStart=/bin/bash -c "curl -Ls \
+        https://raw.githubusercontent.com/TheNewNormal/corectl/golang/MAINTAINERS && \
+        [[ $$(</proc/cmdline) =~ corectl.endpoint=([^\\ ]+) ]] && \
+        curl -Ls $${BASH_REMATCH[1]}/NotIsolated "
+      [Install]
+      RequiredBy=phone-home.service

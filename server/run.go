@@ -48,20 +48,20 @@ import (
 type (
 	// VMInfo - per VM settings
 	VMInfo struct {
-		Name, Channel, Version, UUID       string
-		MacAddress, PublicIP               string
-		InternalSSHkey, InternalSSHprivate string
-		Cpus, Memory, Pid, Root            int
-		SSHkey, CloudConfig, CClocation    string `json:",omitempty"`
-		AddToHypervisor, AddToKernel       string `json:",omitempty"`
-		Ethernet                           []NetworkInterface
-		Storage                            StorageAssets `json:",omitempty"`
-		SharedHomedir, OfflineMode         bool
-		CreationTime                       time.Time
-		publicIPCh                         chan string
-		errCh                              chan error
-		done                               chan struct{}
-		exec                               *exec.Cmd
+		Name, Channel, Version, UUID            string
+		MacAddress, PublicIP                    string
+		InternalSSHkey, InternalSSHprivate      string
+		Cpus, Memory, Pid, Root                 int
+		SSHkey, CloudConfig, CClocation         string `json:",omitempty"`
+		AddToHypervisor, AddToKernel            string `json:",omitempty"`
+		Ethernet                                []NetworkInterface
+		Storage                                 StorageAssets `json:",omitempty"`
+		SharedHomedir, OfflineMode, NotIsolated bool
+		CreationTime                            time.Time
+		publicIPCh                              chan string
+		errCh                                   chan error
+		done                                    chan struct{}
+		exec                                    *exec.Cmd
 	}
 	// NetworkInterface ...
 	NetworkInterface struct {
@@ -315,12 +315,12 @@ func (vm *VMInfo) assembleBootPayload() (xArgs []string, err error) {
 
 func (vm *VMInfo) metadataService() (endpoint string, err error) {
 	var (
-		free      net.Listener
-		pong      sync.Once
-		dataOut   []byte
-		cfgIn     types.Config
-		mux, root = http.NewServeMux(), "/" + vm.UUID
-		rIP       = func(s string) string {
+		free              net.Listener
+		pong, onlineCheck sync.Once
+		dataOut           []byte
+		cfgIn             types.Config
+		mux, root         = http.NewServeMux(), "/" + vm.UUID
+		rIP               = func(s string) string {
 			return strings.Split(s, ":")[0]
 		}
 		netcfg = net.IPNet{
@@ -396,7 +396,20 @@ func (vm *VMInfo) metadataService() (endpoint string, err error) {
 			if isAllowed(rIP(r.RemoteAddr), w) {
 				w.Write([]byte("pong\n"))
 				pong.Do(func() {
-					vm.publicIPCh <- rIP(r.RemoteAddr)
+					Daemon.Lock()
+					Daemon.Active[vm.UUID].publicIPCh <- rIP(r.RemoteAddr)
+					Daemon.Unlock()
+				})
+			}
+		})
+	mux.HandleFunc(root+"/NotIsolated",
+		func(w http.ResponseWriter, r *http.Request) {
+			if isAllowed(rIP(r.RemoteAddr), w) {
+				w.Write([]byte("ok\n"))
+				onlineCheck.Do(func() {
+					Daemon.Lock()
+					Daemon.Active[vm.UUID].NotIsolated = true
+					Daemon.Unlock()
 				})
 			}
 		})
@@ -497,7 +510,7 @@ func (vm *VMInfo) PrettyPrint() {
 		vm.UUID, vm.Name, vm.Version, vm.Channel, vm.Cpus, vm.Memory)
 	fmt.Printf("  Pid:\t\t%v\n  Uptime:\t%v\n",
 		vm.Pid, humanize.Time(vm.CreationTime))
-
+	fmt.Printf("  Sees World:\t%v\n", vm.NotIsolated)
 	if vm.CloudConfig != "" {
 		fmt.Printf("  cloud-config:\t%v\n", vm.CloudConfig)
 	}

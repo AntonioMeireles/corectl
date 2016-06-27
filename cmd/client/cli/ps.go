@@ -21,8 +21,8 @@ import (
 	"os"
 	"text/tabwriter"
 
+	"github.com/TheNewNormal/corectl/cmd/common"
 	"github.com/TheNewNormal/corectl/host/session"
-	shared "github.com/TheNewNormal/corectl/release/cli"
 	"github.com/TheNewNormal/corectl/server"
 	"github.com/dustin/go-humanize"
 	"github.com/spf13/cobra"
@@ -32,8 +32,8 @@ var (
 	psCmd = &cobra.Command{
 		Use:     "ps",
 		Short:   "Lists running CoreOS instances",
-		PreRunE: shared.DefaultPreRunE,
-		RunE:    shared.PScommand,
+		PreRunE: common.DefaultPreRunE,
+		RunE:    common.PScommand,
 	}
 	queryCmd = &cobra.Command{
 		Use:     "query [VMids]",
@@ -43,9 +43,11 @@ var (
 			session.Caller.CmdLine.BindPFlags(cmd.Flags())
 			if (session.Caller.CmdLine.GetBool("ip") ||
 				session.Caller.CmdLine.GetBool("tty") ||
+				session.Caller.CmdLine.GetBool("online") ||
+				session.Caller.CmdLine.GetBool("up") ||
 				session.Caller.CmdLine.GetBool("log")) && len(args) != 1 {
-				err = fmt.Errorf("Incorrect Usage: only one argument expected " +
-					"(a VM's name or UUID)")
+				err = fmt.Errorf("Incorrect Usage: only one argument " +
+					"expected (a VM's name or UUID)")
 			}
 			return err
 		},
@@ -62,13 +64,13 @@ func queryCommand(cmd *cobra.Command, args []string) (err error) {
 		tabP     = func(selected map[string]*server.VMInfo) {
 			w := new(tabwriter.Writer)
 			w.Init(os.Stdout, 5, 0, 1, ' ', 0)
-			fmt.Fprintf(w, "name\tchannel/version\tip\tcpu(s)\tram\tuuid\tpid"+
-				"\tuptime\tvols\n")
+			fmt.Fprintf(w, "name\tchannel/version\tip\tonline\tcpu(s)\tram\t"+
+				"uuid\tpid\tuptime\tvols\n")
 			for _, vm := range selected {
-				fmt.Fprintf(w, "%v\t%v/%v\t%v\t%v\t%v\t%v\t%v\t%v\t%v\n",
-					vm.Name, vm.Channel, vm.Version, vm.PublicIP, vm.Cpus,
-					vm.Memory, vm.UUID, vm.Pid, humanize.Time(vm.CreationTime),
-					len(vm.Storage.HardDrives))
+				fmt.Fprintf(w, "%v\t%v/%v\t%v\t%t\t%v\t%v\t%v\t%v\t%v\t%v\n",
+					vm.Name, vm.Channel, vm.Version, vm.PublicIP,
+					vm.NotIsolated, vm.Cpus, vm.Memory, vm.UUID, vm.Pid,
+					humanize.Time(vm.CreationTime), len(vm.Storage.HardDrives))
 			}
 			w.Flush()
 		}
@@ -86,6 +88,10 @@ func queryCommand(cmd *cobra.Command, args []string) (err error) {
 
 	if len(args) == 1 {
 		if vm, err = vmInfo(args[0]); err != nil {
+			if cli.GetBool("up") {
+				fmt.Println(false)
+				return nil
+			}
 			return
 		}
 		if cli.GetBool("ip") {
@@ -96,6 +102,12 @@ func queryCommand(cmd *cobra.Command, args []string) (err error) {
 			return
 		} else if cli.GetBool("log") {
 			fmt.Println(vm.Log())
+			return
+		} else if cli.GetBool("online") {
+			fmt.Println(vm.NotIsolated)
+			return
+		} else if cli.GetBool("up") {
+			fmt.Println(true)
 			return
 		}
 	}
@@ -142,5 +154,9 @@ func init() {
 		"displays given instance tty's location")
 	queryCmd.Flags().BoolP("log", "l", false,
 		"displays given instance boot logs location")
+	queryCmd.Flags().BoolP("online", "o", false,
+		"tells if at boot time VM had connectivity to outter world")
+	queryCmd.Flags().BoolP("up", "u", false,
+		"tells if a given VM is up or not")
 	rootCmd.AddCommand(queryCmd)
 }

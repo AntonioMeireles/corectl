@@ -19,8 +19,8 @@ import (
 	"encoding/json"
 	"fmt"
 
+	"github.com/TheNewNormal/corectl/cmd/common"
 	"github.com/TheNewNormal/corectl/host/session"
-	shared "github.com/TheNewNormal/corectl/release/cli"
 	"github.com/TheNewNormal/corectl/server"
 	"github.com/TheNewNormal/corectl/target/coreos"
 	"github.com/blang/semver"
@@ -32,7 +32,7 @@ var (
 		Use:     "ls",
 		Aliases: []string{"list"},
 		Short:   "Lists the CoreOS images available locally",
-		PreRunE: shared.DefaultPreRunE,
+		PreRunE: common.DefaultPreRunE,
 		RunE:    lsCommand,
 	}
 )

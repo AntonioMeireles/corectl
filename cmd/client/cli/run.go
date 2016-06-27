@@ -24,6 +24,7 @@ import (
 	"github.com/TheNewNormal/corectl/target/coreos"
 	"github.com/helm/helm/log"
 	"github.com/satori/go.uuid"
+	"github.com/shirou/gopsutil/mem"
 	"github.com/spf13/cobra"
 	"github.com/spf13/pflag"
 	"github.com/spf13/viper"
@@ -91,6 +92,35 @@ func vmBootstrap(args *viper.Viper) (vm *server.VMInfo, err error) {
 	vm.Name = args.GetString("name")
 	vm.UUID = args.GetString("uuid")
 
+	vm.Memory = args.GetInt("memory")
+	if vm.Memory < 1024 {
+		log.Warn("'%v' not a reasonable memory value. %s\n", vm.Memory,
+			"Using '1024', the default")
+		vm.Memory = 1024
+	} else if vm.Memory > 8192 {
+		log.Warn("'%v' not a reasonable memory value, as presently "+
+			"we only support VMs with up to 8GB of RAM. setting "+
+			"it to '8192'", vm.Memory)
+		vm.Memory = 8192
+	}
+
+	if i, err = server.Query("vm:list", nil); err != nil {
+		return
+	}
+
+	totalM := 0
+	for _, v := range i.(map[string]*server.VMInfo) {
+		totalM = totalM + v.Memory
+	}
+	v, _ := mem.VirtualMemory()
+
+	if uint64(totalM+vm.Memory) > v.Total/1024/1024*2/3 {
+		err = fmt.Errorf("Aborted. Aggregated VMs memory usage would " +
+			"become higher than 66pc of total host physical memory which " +
+			"would lead to system unstability")
+		return
+	}
+
 	if vm.UUID == "random" {
 		vm.UUID = uuid.NewV4().String()
 	} else if _, err = uuid.FromString(vm.UUID); err != nil {
@@ -109,18 +139,6 @@ func vmBootstrap(args *viper.Viper) (vm *server.VMInfo, err error) {
 		vm.Name = vm.UUID
 	}
 
-	vm.Memory = args.GetInt("memory")
-	if vm.Memory < 1024 {
-		log.Warn("'%v' not a reasonable memory value. %s\n", vm.Memory,
-			"Using '1024', the default")
-		vm.Memory = 1024
-	} else if vm.Memory > 8192 {
-		log.Warn("'%v' not a reasonable memory value, as presently "+
-			"we only support VMs with up to 8GB of RAM. setting "+
-			"it to '8192'", vm.Memory)
-		vm.Memory = 8192
-	}
-
 	vm.Channel = coreos.Channel(args.GetString("channel"))
 
 	vm.Version = coreos.Version(args.GetString("version"))
@@ -130,7 +148,6 @@ func vmBootstrap(args *viper.Viper) (vm *server.VMInfo, err error) {
 		return
 	}
 
-	// vm.ValidateCDROM(session.Caller.ConfigISO())
 	vm.ValidateCDROM("")
 
 	if err = vm.ValidateVolumes([]string{args.GetString("root")},
