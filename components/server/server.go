@@ -88,7 +88,9 @@ func Start() (err error) {
 		s := <-hades
 		log.Info("Got '%v' signal, stopping server...", s)
 		signal.Stop(hades)
+		Daemon.Lock()
 		Daemon.RPCserver.Stop()
+		Daemon.Unlock()
 	}()
 
 	log.Info("server starting...")
@@ -99,9 +101,11 @@ func Start() (err error) {
 		log.Err("Cannot start RPC server [%s]", err)
 		return
 	}
+	Daemon.Lock()
 	for _, r := range Daemon.Active {
 		r.halt()
 	}
+	Daemon.Unlock()
 	Daemon.Jobs.Wait()
 
 	log.Info("gone!")

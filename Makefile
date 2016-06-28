@@ -32,6 +32,7 @@ GIT = /usr/bin/git
 
 ifeq ($(DEBUG),true)
     GO_GCFLAGS := $(GO_GCFLAGS) -N -l
+	GOBUILD = $(GOBUILD) -race
 else
     GO_LDFLAGS := $(GO_LDFLAGS) -w -s
 endif

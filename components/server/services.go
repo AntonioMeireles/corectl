@@ -99,9 +99,11 @@ func run(vm *VMInfo) (booted *VMInfo, err error) {
 			vm.errCh <- fmt.Errorf("Unable to grab VM's IP after " +
 				"30s (!)... Aborted")
 		case ip := <-vm.publicIPCh:
+			Daemon.Lock()
+			vm.Pid, vm.PublicIP = vm.exec.Process.Pid, ip
+			Daemon.Unlock()
 			close(vm.publicIPCh)
 			close(vm.done)
-			vm.Pid, vm.PublicIP = vm.exec.Process.Pid, ip
 			log.Info("started '%s' in background with IP %v and "+
 				"PID %v\n", vm.Name, vm.PublicIP, vm.exec.Process.Pid)
 		}
@@ -110,7 +112,10 @@ func run(vm *VMInfo) (booted *VMInfo, err error) {
 	go func() {
 		Daemon.Jobs.Add(1)
 		defer Daemon.Jobs.Done()
-		if err := vm.exec.Start(); err != nil {
+		Daemon.Lock()
+		err := vm.exec.Start()
+		Daemon.Unlock()
+		if err != nil {
 			vm.errCh <- err
 		}
 		vm.exec.Wait()
@@ -189,7 +194,10 @@ func stopVMs(targets []string) error {
 	for _, v := range toHalt {
 		Daemon.Active[v].halt()
 		for {
-			if _, ok := Daemon.Active[v]; !ok {
+			Daemon.Lock()
+			_, ok := Daemon.Active[v]
+			Daemon.Unlock()
+			if !ok {
 				break
 			}
 			time.Sleep(100 * time.Millisecond)
