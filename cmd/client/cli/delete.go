@@ -19,10 +19,10 @@ import (
 	"github.com/blang/semver"
 	"github.com/helm/helm/log"
 
-	"github.com/TheNewNormal/corectl/cmd/common"
-	"github.com/TheNewNormal/corectl/host/session"
-	"github.com/TheNewNormal/corectl/server"
-	"github.com/TheNewNormal/corectl/target/coreos"
+	"github.com/TheNewNormal/corectl/components/common"
+	"github.com/TheNewNormal/corectl/components/host/session"
+	"github.com/TheNewNormal/corectl/components/server"
+	"github.com/TheNewNormal/corectl/components/target/coreos"
 	"github.com/spf13/cobra"
 )
 

@@ -24,8 +24,8 @@ import (
 	"strings"
 	"time"
 
-	"github.com/TheNewNormal/corectl/host/darwin/misc/uuid2ip"
-	"github.com/TheNewNormal/corectl/host/session"
+	"github.com/TheNewNormal/corectl/components/host/darwin/misc/uuid2ip"
+	"github.com/TheNewNormal/corectl/components/host/session"
 	"github.com/TheNewNormal/corectl/release"
 	"github.com/blang/semver"
 	"github.com/deis/pkg/log"

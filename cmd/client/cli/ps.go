@@ -21,9 +21,9 @@ import (
 	"os"
 	"text/tabwriter"
 
-	"github.com/TheNewNormal/corectl/cmd/common"
-	"github.com/TheNewNormal/corectl/host/session"
-	"github.com/TheNewNormal/corectl/server"
+	"github.com/TheNewNormal/corectl/components/common"
+	"github.com/TheNewNormal/corectl/components/host/session"
+	"github.com/TheNewNormal/corectl/components/server"
 	"github.com/dustin/go-humanize"
 	"github.com/spf13/cobra"
 )

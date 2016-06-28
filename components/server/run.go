@@ -35,8 +35,8 @@ import (
 	"sync"
 	"time"
 
-	"github.com/TheNewNormal/corectl/host/session"
-	"github.com/TheNewNormal/corectl/target/coreos"
+	"github.com/TheNewNormal/corectl/components/host/session"
+	"github.com/TheNewNormal/corectl/components/target/coreos"
 	"github.com/coreos/fuze/config"
 	"github.com/coreos/go-systemd/unit"
 	"github.com/coreos/ignition/config/types"

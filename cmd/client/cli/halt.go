@@ -18,8 +18,8 @@ package cli
 import (
 	"fmt"
 
-	"github.com/TheNewNormal/corectl/host/session"
-	"github.com/TheNewNormal/corectl/server"
+	"github.com/TheNewNormal/corectl/components/host/session"
+	"github.com/TheNewNormal/corectl/components/server"
 	"github.com/spf13/cobra"
 )
 

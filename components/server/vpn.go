@@ -23,7 +23,7 @@ import (
 	"os/exec"
 	"strings"
 
-	"github.com/TheNewNormal/corectl/host/session"
+	"github.com/TheNewNormal/corectl/components/host/session"
 	"github.com/deis/pkg/log"
 )
 

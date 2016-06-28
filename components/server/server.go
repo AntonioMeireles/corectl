@@ -22,7 +22,7 @@ import (
 	"sync"
 	"syscall"
 
-	"github.com/TheNewNormal/corectl/host/session"
+	"github.com/TheNewNormal/corectl/components/host/session"
 	"github.com/TheNewNormal/corectl/release"
 	"github.com/blang/semver"
 	"github.com/helm/helm/log"

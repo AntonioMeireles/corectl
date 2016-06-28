@@ -21,10 +21,10 @@ import (
 	"path/filepath"
 	"strings"
 
-	"github.com/TheNewNormal/corectl/assets"
-	"github.com/TheNewNormal/corectl/host/session"
+	"github.com/TheNewNormal/corectl/components/common/assets"
+	"github.com/TheNewNormal/corectl/components/host/session"
 	"github.com/TheNewNormal/corectl/release"
-	"github.com/TheNewNormal/corectl/server"
+	"github.com/TheNewNormal/corectl/components/server"
 	"github.com/blang/semver"
 	"github.com/deis/pkg/log"
 	"github.com/spf13/cobra"

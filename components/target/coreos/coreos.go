@@ -18,7 +18,7 @@ package coreos
 import (
 	"time"
 
-	"github.com/TheNewNormal/corectl/assets"
+	"github.com/TheNewNormal/corectl/components/common/assets"
 )
 
 const latestImageBreackage = "2016-06-25T00:00:00WET"

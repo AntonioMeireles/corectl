@@ -29,7 +29,7 @@ import (
 	"time"
 
 	"github.com/TheNewNormal/corectl/release"
-	"github.com/TheNewNormal/corectl/target/coreos"
+	"github.com/TheNewNormal/corectl/components/target/coreos"
 	"github.com/bugsnag/osext"
 	"github.com/helm/helm/log"
 	"github.com/spf13/viper"
