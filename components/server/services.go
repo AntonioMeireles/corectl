@@ -188,6 +188,12 @@ func stopVMs(targets []string) error {
 	}
 	for _, v := range toHalt {
 		Daemon.Active[v].halt()
+		for {
+			if _, ok := Daemon.Active[v]; !ok {
+				break
+			}
+			time.Sleep(100 * time.Millisecond)
+		}
 	}
 	return nil
 }
