@@ -21,6 +21,7 @@ corectl query [VMids]
   -o, --online   tells if at boot time VM had connectivity to outter world
   -t, --tty      displays given instance tty's location
   -u, --up       tells if a given VM is up or not
+  -U, --uuid     returns VM's UUID
 ```
 
 ### Options inherited from parent commands

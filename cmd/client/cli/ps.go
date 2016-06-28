@@ -45,6 +45,7 @@ var (
 				session.Caller.CmdLine.GetBool("tty") ||
 				session.Caller.CmdLine.GetBool("online") ||
 				session.Caller.CmdLine.GetBool("up") ||
+				session.Caller.CmdLine.GetBool("uuid") ||
 				session.Caller.CmdLine.GetBool("log")) && len(args) != 1 {
 				err = fmt.Errorf("Incorrect Usage: only one argument " +
 					"expected (a VM's name or UUID)")
@@ -96,6 +97,9 @@ func queryCommand(cmd *cobra.Command, args []string) (err error) {
 		}
 		if cli.GetBool("ip") {
 			fmt.Println(vm.PublicIP)
+			return
+		} else if cli.GetBool("uuid") {
+			fmt.Println(vm.UUID)
 			return
 		} else if cli.GetBool("tty") {
 			fmt.Println(vm.TTY())
@@ -158,5 +162,7 @@ func init() {
 		"tells if at boot time VM had connectivity to outter world")
 	queryCmd.Flags().BoolP("up", "u", false,
 		"tells if a given VM is up or not")
+	queryCmd.Flags().BoolP("uuid", "U", false,
+		"returns VM's UUID")
 	rootCmd.AddCommand(queryCmd)
 }
