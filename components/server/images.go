@@ -148,7 +148,7 @@ func PullImage(channel, version string,
 	}
 	if available {
 		if !override {
-			log.Info("%s/%s already available on your system", channel, version)
+			log.Debug("%s/%s already available on your system", channel, version)
 			return version, err
 		} else {
 			// tell server that this image become unavailable in the meantime
