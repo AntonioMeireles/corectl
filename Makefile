@@ -10,8 +10,8 @@ GO15VENDOREXPERIMENT = 0
 
 BUILD_DIR ?= $(shell pwd)/bin
 GOPATH := $(shell echo $(PWD) | \
-        sed -e "s,src/$(REPOSITORY).*,,"):$(shell godep go env \
-        | grep GOPATH | sed -e 's,",,g' -e "s,.*=,,")
+        sed -e "s,src/$(REPOSITORY).*,,"):$(shell mkdir -p Godeps && \
+		godep go env | grep GOPATH | sed -e 's,",,g' -e "s,.*=,,")
 GODEP = GOPATH=$(GOPATH) GO15VENDOREXPERIMENT=$(GO15VENDOREXPERIMENT) \
     GOOS=$(GOOS) GOARCH=$(GOARCH) CGO_ENABLED=$(CGO_ENABLED) godep
 GOBUILD = $(GODEP) go build
@@ -64,7 +64,7 @@ cmd/server: force
 		-gcflags "$(GO_GCFLAGS)" -ldflags "$(GO_LDFLAGS)"
 	@$(TOUCH) $@
 
-components/common/assets:
+components/common/assets: force
 	cd $@; \
 		$(RM) assets_vfsdata.go ; \
 		$(GODEP) go run assets_generator.go -tags=dev
@@ -97,6 +97,9 @@ hyperkit: force
 	# 	  - opam install --yes uri qcow-format ocamlfind
 	#   - maintenance
 	#     - opam update && opam upgrade -y
+	# 	  - opam pin add qcow-format
+	#					"git://github.com/mirage/ocaml-qcow#master" -y
+	# 	  - opam install --yes uri qcow-format ocamlfind
 	#   - build
 	#     - make clean
 	#     - eval `opam config env` && make all
