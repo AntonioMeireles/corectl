@@ -13,15 +13,16 @@
 // limitations under the License.
 //
 
-package cli
+package main
 
 import (
 	"fmt"
 
 	"github.com/TheNewNormal/corectl/components/common"
 	"github.com/TheNewNormal/corectl/components/host/session"
-	"github.com/TheNewNormal/corectl/release"
 	"github.com/TheNewNormal/corectl/components/server"
+	"github.com/TheNewNormal/corectl/release"
+
 	"github.com/everdev/mack"
 	"github.com/spf13/cobra"
 )

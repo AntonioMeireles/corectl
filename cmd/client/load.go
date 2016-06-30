@@ -13,7 +13,7 @@
 // limitations under the License.
 //
 
-package cli
+package main
 
 import (
 	"bytes"

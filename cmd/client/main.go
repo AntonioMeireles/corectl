@@ -15,11 +15,38 @@
 
 package main
 
-import "github.com/helm/helm/log"
-import "github.com/TheNewNormal/corectl/cmd/client/cli"
+import (
+	"fmt"
+
+	"github.com/TheNewNormal/corectl/components/common"
+	"github.com/TheNewNormal/corectl/components/host/session"
+	"github.com/helm/helm/log"
+	"github.com/spf13/cobra"
+)
+
+var rootCmd = common.RootCmdTmpl
+
+func init() {
+	rootCmd.PersistentFlags().StringP("server", "s", "127.0.0.1",
+		"corectld location")
+	rootCmd.PersistentFlags().MarkHidden("server")
+	rootCmd.PersistentPreRunE = func(cmd *cobra.Command, args []string) (err error) {
+		cli := session.Caller.CmdLine
+		cli.BindPFlags(cmd.Flags())
+		if cli.GetBool("debug") {
+			log.IsDebugging = true
+		}
+		if session.Caller.Privileged {
+			return fmt.Errorf("too many privileges invoking %v, "+
+				"please call it as a regular user", session.AppName())
+		}
+		return session.Caller.NormalizeOnDiskLayout()
+	}
+	common.InitTmpl(rootCmd)
+}
 
 func main() {
-	if err := cli.Main(); err != nil {
+	if err := common.STARTup(rootCmd); err != nil {
 		log.Die(err.Error())
 	}
 }

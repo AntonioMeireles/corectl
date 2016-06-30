@@ -13,7 +13,7 @@
 // limitations under the License.
 //
 
-package cli
+package main
 
 import (
 	"github.com/TheNewNormal/corectl/components/common"
