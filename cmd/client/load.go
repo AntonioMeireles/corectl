@@ -109,20 +109,23 @@ func loadCommand(cmd *cobra.Command, args []string) (err error) {
 	sort.Strings(ordered)
 	for slot, name := range ordered {
 		var (
-			i  interface{}
-			vm *server.VMInfo
+			vm    *server.VMInfo
+			reply = &server.RPCreply{}
 		)
 
 		fmt.Println("> booting", name, slot)
 		if vm, err = vmBootstrap(vmDefs[name]); err != nil {
 			return
 		}
-		if i, err = server.Query("vm:run", vm); err != nil {
+		if reply, err = server.RPCQuery("Run", &server.RPCquery{VM: vm}); err != nil {
 			return
 		}
 		log.Info("'%v' started successfuly with address %v and PID %v",
-			vm.Name, i.(*server.VMInfo).PublicIP, i.(*server.VMInfo).Pid)
-		log.Info("'%v' boot logs can be found at '%v'", vm.Name, vm.Log())
+			reply.VM.Name, reply.VM.PublicIP, reply.VM.Pid)
+		log.Info("'%v' boot logs can be found at '%v'",
+			reply.VM.Name, reply.VM.Log())
+		log.Info("'%v' console can be found at '%v'",
+			reply.VM.Name, reply.VM.TTY())
 	}
 	return
 }

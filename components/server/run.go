@@ -19,14 +19,11 @@ import (
 	"crypto/rand"
 	"crypto/rsa"
 	"crypto/x509"
-	"encoding/json"
 	"encoding/pem"
 	"fmt"
-	"io/ioutil"
 	"os/exec"
 	"syscall"
 
-	"net"
 	"net/http"
 	"os"
 	"path/filepath"
@@ -36,10 +33,6 @@ import (
 	"time"
 
 	"github.com/TheNewNormal/corectl/components/host/session"
-	"github.com/TheNewNormal/corectl/components/target/coreos"
-	"github.com/coreos/fuze/config"
-	"github.com/coreos/go-systemd/unit"
-	"github.com/coreos/ignition/config/types"
 	"github.com/deis/pkg/log"
 	"github.com/dustin/go-humanize"
 	"golang.org/x/crypto/ssh"
@@ -58,10 +51,12 @@ type (
 		Storage                                 StorageAssets `json:",omitempty"`
 		SharedHomedir, OfflineMode, NotIsolated bool
 		CreationTime                            time.Time
-		publicIPCh                              chan string
-		errCh                                   chan error
-		done                                    chan struct{}
-		exec                                    *exec.Cmd
+
+		publicIPCh               chan string
+		errCh                    chan error
+		done                     chan struct{}
+		exec                     *exec.Cmd
+		isolationCheck, callBack sync.Once
 	}
 	// NetworkInterface ...
 	NetworkInterface struct {
@@ -134,13 +129,13 @@ func (vm *VMInfo) ValidateVolumes(volumes []string, root bool) (err error) {
 					" in '.img' ('%s' doesn't)", j)
 			}
 			// check atomicity
-			var i interface{}
+			reply := &RPCreply{}
 
-			if i, err = Query("vm:list", nil); err != nil {
+			if reply, err = RPCQuery("ActiveVMs", &RPCquery{}); err != nil {
 				return
 			}
-			active := i.(map[string]*VMInfo)
-			for _, d := range active {
+
+			for _, d := range reply.Running {
 				for _, vv := range d.Storage.HardDrives {
 					if abs == vv.Path {
 						return fmt.Errorf("Aborting: %s %s (%s)", abs,
@@ -245,7 +240,8 @@ func (vm *VMInfo) assembleBootPayload() (xArgs []string, err error) {
 			"-A",
 			"-u",
 		}
-		endpoint string
+		endpoint = fmt.Sprintf("http://%s:%s/%s",
+			session.Caller.Address, "2511", vm.UUID)
 	)
 
 	if vm.SSHkey != "" {
@@ -255,10 +251,6 @@ func (vm *VMInfo) assembleBootPayload() (xArgs []string, err error) {
 	if vm.Root != -1 {
 		cmdline = fmt.Sprintf("%s root=/dev/vd%s",
 			cmdline, string(vm.Root+'a'))
-	}
-
-	if endpoint, err = vm.metadataService(); err != nil {
-		return
 	}
 
 	cmdline = fmt.Sprintf("%s corectl.endpoint=%s  "+
@@ -311,120 +303,6 @@ func (vm *VMInfo) assembleBootPayload() (xArgs []string, err error) {
 			fmt.Sprintf("kexec,%s,%s,", vmlinuz, initrd),
 			fmt.Sprintf("%v", cmdline)},
 		err
-}
-
-func (vm *VMInfo) metadataService() (endpoint string, err error) {
-	var (
-		free              net.Listener
-		pong, onlineCheck sync.Once
-		dataOut           []byte
-		cfgIn             types.Config
-		mux, root         = http.NewServeMux(), "/" + vm.UUID
-		rIP               = func(s string) string {
-			return strings.Split(s, ":")[0]
-		}
-		netcfg = net.IPNet{
-			IP:   net.ParseIP(session.Caller.Address),
-			Mask: net.IPMask(net.ParseIP(session.Caller.Mask).To4()),
-		}
-		isAllowed = func(origin string, w http.ResponseWriter) bool {
-			if netcfg.Contains(net.ParseIP(origin)) {
-				w.Header().Set("Content-Type",
-					"text/plain; charset=utf-8")
-				w.WriteHeader(http.StatusOK)
-				return true
-			}
-			w.WriteHeader(http.StatusPreconditionFailed)
-			w.Write(nil)
-			return false
-		}
-	)
-	if free, err = net.Listen("tcp", "127.0.0.1:0"); err != nil {
-		return
-	}
-
-	if vm.CloudConfig != "" && vm.CClocation == Local {
-		var txt []byte
-		if txt, err = ioutil.ReadFile(vm.CloudConfig); err != nil {
-			return
-		}
-
-		mux.HandleFunc(root+"/cloud-config",
-			func(w http.ResponseWriter, r *http.Request) {
-				if isAllowed(rIP(r.RemoteAddr), w) {
-					w.Write(txt)
-				}
-			})
-	}
-
-	cfgTemp := strings.Replace(coreos.CoreOSIgnitionTmpl,
-		"__vm.InternalSSHkey__", vm.InternalSSHkey, -1)
-	cfgTemp = strings.Replace(cfgTemp,
-		"__vm.Name__", vm.Name, -1)
-	cfgTemp = strings.Replace(cfgTemp,
-		"__corectl.Version__", Daemon.Meta.Version, -1)
-	if cfgIn, err = config.ParseAsV2_0_0([]byte(cfgTemp)); err != nil {
-		return
-	}
-	if dataOut, err = json.MarshalIndent(&cfgIn, "", "  "); err != nil {
-		return
-	}
-	dataOut = append(dataOut, '\n')
-
-	mux.HandleFunc(root+"/ignition",
-		func(w http.ResponseWriter, r *http.Request) {
-			if isAllowed(rIP(r.RemoteAddr), w) {
-				w.Write([]byte(dataOut))
-			}
-		})
-
-	mux.HandleFunc(root+"/homedir",
-		func(w http.ResponseWriter, r *http.Request) {
-			if isAllowed(rIP(r.RemoteAddr), w) {
-				nfs := strings.Replace(coreos.CoreOEMsharedHomedir,
-					"((server))", session.Caller.Address, -1)
-				nfs = strings.Replace(nfs,
-					"((path))", session.Caller.HomeDir, -1)
-				nfs = strings.Replace(nfs, "((path_escaped))",
-					unit.UnitNamePathEscape(session.Caller.HomeDir), -1)
-				w.Write([]byte(nfs))
-			}
-		})
-
-	mux.HandleFunc(root+"/ping",
-		func(w http.ResponseWriter, r *http.Request) {
-			if isAllowed(rIP(r.RemoteAddr), w) {
-				w.Write([]byte("pong\n"))
-				pong.Do(func() {
-					Daemon.Lock()
-					Daemon.Active[vm.UUID].publicIPCh <- rIP(r.RemoteAddr)
-					Daemon.Unlock()
-				})
-			}
-		})
-	mux.HandleFunc(root+"/NotIsolated",
-		func(w http.ResponseWriter, r *http.Request) {
-			if isAllowed(rIP(r.RemoteAddr), w) {
-				w.Write([]byte("ok\n"))
-				onlineCheck.Do(func() {
-					Daemon.Lock()
-					Daemon.Active[vm.UUID].NotIsolated = true
-					Daemon.Unlock()
-				})
-			}
-		})
-
-	endpointServe := &http.Server{
-		Addr:    fmt.Sprintf(":%v", free.Addr().(*net.TCPAddr).Port),
-		Handler: mux,
-	}
-	go func() {
-		defer free.Close()
-		endpointServe.ListenAndServe()
-	}()
-
-	return fmt.Sprintf("http://%v%v%v",
-		session.Caller.Address, endpointServe.Addr, root), err
 }
 
 func (vm *VMInfo) halt() {

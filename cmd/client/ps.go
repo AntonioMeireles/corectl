@@ -59,7 +59,8 @@ var (
 func queryCommand(cmd *cobra.Command, args []string) (err error) {
 	var (
 		pp       []byte
-		i        interface{}
+		reply    = &server.RPCreply{}
+		cli      = session.Caller.CmdLine
 		selected map[string]*server.VMInfo
 		vm       *server.VMInfo
 		tabP     = func(selected map[string]*server.VMInfo) {
@@ -77,15 +78,15 @@ func queryCommand(cmd *cobra.Command, args []string) (err error) {
 		}
 	)
 
-	cli := session.Caller.CmdLine
 	if _, err = server.Daemon.Running(); err != nil {
 		return session.ErrServerUnreachable
 	}
 
-	if i, err = server.Query("vm:list", nil); err != nil {
+	if reply, err =
+		server.RPCQuery("ActiveVMs", &server.RPCquery{}); err != nil {
 		return
 	}
-	running := i.(map[string]*server.VMInfo)
+	running := reply.Running
 
 	if len(args) == 1 {
 		if vm, err = vmInfo(args[0]); err != nil {

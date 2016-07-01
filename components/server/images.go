@@ -152,8 +152,8 @@ func PullImage(channel, version string,
 			return version, err
 		} else {
 			// tell server that this image become unavailable in the meantime
-			_, err = Query("images:remove", []string{channel, version})
-			if err != nil {
+			if _, err = RPCQuery("RemoveImage", &RPCquery{
+				Input: []string{channel, version}}); err != nil {
 				return
 			}
 		}

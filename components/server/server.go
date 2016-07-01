@@ -17,6 +17,7 @@ package server
 
 import (
 	"fmt"
+	"net/http"
 	"os"
 	"os/signal"
 	"sync"
@@ -25,8 +26,8 @@ import (
 	"github.com/TheNewNormal/corectl/components/host/session"
 	"github.com/TheNewNormal/corectl/release"
 	"github.com/blang/semver"
+	"github.com/braintree/manners"
 	"github.com/helm/helm/log"
-	"github.com/valyala/gorpc"
 )
 
 type (
@@ -39,7 +40,7 @@ type (
 		Meta      *release.Info
 		Media     MediaAssets
 		Active    map[string]*VMInfo
-		RPCserver *gorpc.Server
+		APIserver *manners.GracefulServer
 		Jobs      sync.WaitGroup
 	}
 )
@@ -52,7 +53,7 @@ func New() *Config {
 		Meta:      session.Caller.Meta,
 		Media:     nil,
 		Active:    nil,
-		RPCserver: nil,
+		APIserver: nil,
 		Jobs:      sync.WaitGroup{},
 	}
 }
@@ -89,18 +90,23 @@ func Start() (err error) {
 		log.Info("Got '%v' signal, stopping server...", s)
 		signal.Stop(hades)
 		Daemon.Lock()
-		Daemon.RPCserver.Stop()
+		Daemon.APIserver.Close()
 		Daemon.Unlock()
 	}()
 
 	log.Info("server starting...")
 
-	Daemon.RPCserver = gorpc.NewTCPServer("127.0.0.1:2511",
-		session.Caller.Services.NewHandlerFunc())
-	if err = Daemon.RPCserver.Serve(); err != nil {
-		log.Err("Cannot start RPC server [%s]", err)
+	httpServiceSetup()
+	rpcServiceSetup()
+
+	Daemon.APIserver = manners.NewWithServer(&http.Server{
+		Addr:    ":2511",
+		Handler: httpServices})
+
+	if err = Daemon.APIserver.ListenAndServe(); err != nil {
 		return
 	}
+
 	Daemon.Lock()
 	for _, r := range Daemon.Active {
 		r.halt()

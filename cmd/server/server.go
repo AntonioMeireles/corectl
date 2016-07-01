@@ -50,16 +50,16 @@ func shutdownCommand(cmd *cobra.Command, args []string) (err error) {
 	if _, err = server.Daemon.Running(); err != nil {
 		return
 	}
-	server.Query("server:stop", nil)
+	_, err = server.RPCQuery("Stop", &server.RPCquery{})
 	return
 }
 
 func serverStartCommand(cmd *cobra.Command, args []string) (err error) {
-	var srv interface{}
+	var srv *release.Info
 
 	if srv, err = server.Daemon.Running(); err == nil {
 		return fmt.Errorf("corectld already started (with pid %v)",
-			srv.(*release.Info).Pid)
+			srv.Pid)
 	}
 
 	if !session.Caller.Privileged {
@@ -75,7 +75,7 @@ func serverStartCommand(cmd *cobra.Command, args []string) (err error) {
 		}
 		if _, err = mack.AlertBox(mack.AlertOptions{
 			Title: fmt.Sprintf("corectld (%v) just started with Pid %v .",
-				srv.(*release.Info).Version, srv.(*release.Info).Pid),
+				srv.Version, srv.Pid),
 			Message:  "\n\n(this window will self destruct after 15s)",
 			Style:    "informational",
 			Duration: 15,
@@ -83,7 +83,7 @@ func serverStartCommand(cmd *cobra.Command, args []string) (err error) {
 			return
 		}
 		fmt.Println("Started corectld:")
-		srv.(*release.Info).PrettyPrint(true)
+		srv.PrettyPrint(true)
 		return
 	}
 	server.Daemon = server.New()

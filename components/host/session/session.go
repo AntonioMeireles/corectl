@@ -28,18 +28,19 @@ import (
 	"strings"
 	"time"
 
-	"github.com/TheNewNormal/corectl/release"
 	"github.com/TheNewNormal/corectl/components/target/coreos"
+	"github.com/TheNewNormal/corectl/release"
 	"github.com/bugsnag/osext"
 	"github.com/helm/helm/log"
 	"github.com/spf13/viper"
-	"github.com/valyala/gorpc"
 )
 
 var (
 	// Caller ...
 	Caller               *Context
-	ErrServerUnreachable = fmt.Errorf("Couldn't connect to corectld")
+	ErrServerUnreachable = fmt.Errorf("Failed to connect to server\n" +
+		"Please check your connection settings and ensure that 'corectld' " +
+		"is running.\n")
 )
 
 // Network ...
@@ -53,18 +54,15 @@ type Context struct {
 	Privileged    bool          `json:"-"`
 	Meta          *release.Info `json:"-"`
 	CmdLine       *viper.Viper  `json:"-"`
+	ServerAddress string
 	*user.User    `json:"User"`
 	*Network      `json:"Network"`
-	Services      *gorpc.Dispatcher       `json:"-"`
-	RPCclient     *gorpc.Client           `json:"-"`
-	RPCdispatcher *gorpc.DispatcherClient `json:"-"`
 }
 
 // New session context
 func New() (ctx *Context, err error) {
 	var (
 		usr                 *user.User
-		rpcClient           *gorpc.DispatcherClient
 		isSuperUser         bool
 		netMask, netAddress []byte
 		cmdL                = []string{
@@ -112,14 +110,12 @@ func New() (ctx *Context, err error) {
 			runtime.GOARCH,
 		},
 		rawArgs,
+		"127.0.0.1:2511",
 		usr,
 		&Network{
 			strings.TrimSpace(string(netAddress)),
 			strings.TrimSpace(string(netMask)),
 		},
-		gorpc.NewDispatcher(),
-		nil,
-		rpcClient,
 	}, err
 }
 

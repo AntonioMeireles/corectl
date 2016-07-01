@@ -20,7 +20,6 @@ import (
 	"github.com/TheNewNormal/corectl/components/host/session"
 	"github.com/TheNewNormal/corectl/components/server"
 	"github.com/TheNewNormal/corectl/components/target/coreos"
-	"github.com/blang/semver"
 	"github.com/spf13/cobra"
 )
 
@@ -35,17 +34,22 @@ var (
 )
 
 func pullCommand(cmd *cobra.Command, args []string) (err error) {
-	var i interface{}
-	cli := session.Caller.CmdLine
+	var (
+		reply = &server.RPCreply{}
+		cli   = session.Caller.CmdLine
+		force = cli.GetBool("force")
+	)
+
 	if _, err = server.Daemon.Running(); err != nil {
 		return session.ErrServerUnreachable
 	}
-	force := cli.GetBool("force")
+
 	if cli.GetBool("warmup") {
-		if i, err = server.Query("images:list", nil); err != nil {
+		reply, err = server.RPCQuery("AvailableImages", &server.RPCquery{})
+		if err != nil {
 			return
 		}
-		local := i.(map[string]semver.Versions)
+		local := reply.Images
 		for _, channel := range coreos.Channels {
 			if local[channel].Len() > 0 {
 				if _, err =
@@ -55,7 +59,7 @@ func pullCommand(cmd *cobra.Command, args []string) (err error) {
 				}
 			}
 		}
-		_, err = server.Query("images:list", nil)
+		_, err = server.RPCQuery("AvailableImages", &server.RPCquery{})
 		return
 	}
 	if _, err =
@@ -64,7 +68,7 @@ func pullCommand(cmd *cobra.Command, args []string) (err error) {
 			force, false); err != nil {
 		return
 	}
-	_, err = server.Query("images:list", nil)
+	_, err = server.RPCQuery("AvailableImages", &server.RPCquery{})
 	return
 }
 

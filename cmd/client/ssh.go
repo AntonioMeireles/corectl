@@ -84,16 +84,17 @@ func sshCommand(cmd *cobra.Command, args []string) (err error) {
 }
 
 func vmInfo(id string) (vm *server.VMInfo, err error) {
-	var i interface{}
+	var reply = &server.RPCreply{}
 	if _, err = server.Daemon.Running(); err != nil {
 		err = session.ErrServerUnreachable
 		return
 	}
 
-	if i, err = server.Query("vm:list", nil); err != nil {
+	if reply, err =
+		server.RPCQuery("ActiveVMs", &server.RPCquery{}); err != nil {
 		return
 	}
-	running := i.(map[string]*server.VMInfo)
+	running := reply.Running
 	for _, v := range running {
 		if v.Name == id || v.UUID == id {
 			return v, err

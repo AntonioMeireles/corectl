@@ -46,9 +46,9 @@ func killCommand(cmd *cobra.Command, args []string) (err error) {
 	}
 
 	if session.Caller.CmdLine.GetBool("all") {
-		_, err = server.Query("vm:stop", []string{})
+		_, err = server.RPCQuery("StopVMs", &server.RPCquery{})
 	} else {
-		_, err = server.Query("vm:stop", args)
+		_, err = server.RPCQuery("StopVMs", &server.RPCquery{Input: args})
 	}
 	return
 }

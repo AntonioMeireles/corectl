@@ -41,9 +41,9 @@ var (
 
 func runCommand(cmd *cobra.Command, args []string) (err error) {
 	var (
-		i   interface{}
-		vm  *server.VMInfo
-		cli = session.Caller.CmdLine
+		reply = &server.RPCreply{}
+		vm    *server.VMInfo
+		cli   = session.Caller.CmdLine
 	)
 
 	if _, err = server.Daemon.Running(); err != nil {
@@ -52,19 +52,21 @@ func runCommand(cmd *cobra.Command, args []string) (err error) {
 	if vm, err = vmBootstrap(cli); err != nil {
 		return
 	}
-	if i, err = server.Query("vm:run", vm); err != nil {
+	reply, err = server.RPCQuery("Run", &server.RPCquery{VM: vm})
+	if err != nil {
 		return
 	}
 	log.Info("'%v' started successfuly with address %v and PID %v",
-		vm.Name, i.(*server.VMInfo).PublicIP, i.(*server.VMInfo).Pid)
-	log.Info("'%v' boot logs can be found at '%v'", vm.Name, vm.Log())
-	log.Info("'%v' console can be found at '%v'", vm.Name, vm.TTY())
+		reply.VM.Name, reply.VM.PublicIP, reply.VM.Pid)
+	log.Info("'%v' boot logs can be found at '%v'",
+		reply.VM.Name, reply.VM.Log())
+	log.Info("'%v' console can be found at '%v'", reply.VM.Name, reply.VM.TTY())
 	return
 }
 
 func vmBootstrap(args *viper.Viper) (vm *server.VMInfo, err error) {
 	var (
-		i      interface{}
+		reply  = &server.RPCreply{}
 		pSlice = func(plain []string) []string {
 			// getting around https://github.com/spf13/viper/issues/112
 			var sliced []string
@@ -104,12 +106,13 @@ func vmBootstrap(args *viper.Viper) (vm *server.VMInfo, err error) {
 		vm.Memory = 8192
 	}
 
-	if i, err = server.Query("vm:list", nil); err != nil {
+	if reply, err =
+		server.RPCQuery("ActiveVMs", &server.RPCquery{}); err != nil {
 		return
 	}
 
 	totalM := 0
-	for _, v := range i.(map[string]*server.VMInfo) {
+	for _, v := range reply.Running {
 		totalM = totalM + v.Memory
 	}
 	v, _ := mem.VirtualMemory()
@@ -129,11 +132,12 @@ func vmBootstrap(args *viper.Viper) (vm *server.VMInfo, err error) {
 		vm.UUID = uuid.NewV4().String()
 	}
 
-	if i, err = server.Query("vm:uuid2mac",
-		[]string{vm.UUID, args.GetString("uuid")}); err != nil {
+	reply, err = server.RPCQuery("UUIDtoMACaddr",
+		&server.RPCquery{Input: []string{vm.UUID, args.GetString("uuid")}})
+	if err != nil {
 		return
 	}
-	vm.MacAddress, vm.UUID = i.([]string)[0], i.([]string)[1]
+	vm.MacAddress, vm.UUID = reply.Output[0], reply.Output[1]
 
 	if vm.Name == "" {
 		vm.Name = vm.UUID

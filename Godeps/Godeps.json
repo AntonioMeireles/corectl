@@ -20,6 +20,11 @@
 			"Rev": "e64c75d1c910cd81c8caa1f2cc2c6409dd65af81"
 		},
 		{
+			"ImportPath": "github.com/braintree/manners",
+			"Comment": "0.4.0-15-g82a8879",
+			"Rev": "82a8879fc5fd0381fa8b2d8033b19bf255252088"
+		},
+		{
 			"ImportPath": "github.com/bugsnag/osext",
 			"Rev": "0dd3f918b21bec95ace9dc86c7e70266cfc5c702"
 		},
@@ -86,6 +91,20 @@
 		{
 			"ImportPath": "github.com/google/go-querystring/query",
 			"Rev": "9235644dd9e52eeae6fa48efd539fdc351a0af53"
+		},
+		{
+			"ImportPath": "github.com/gorilla/context",
+			"Comment": "v1.1-4-gaed02d1",
+			"Rev": "aed02d124ae4a0e94fea4541c8effd05bf0c8296"
+		},
+		{
+			"ImportPath": "github.com/gorilla/mux",
+			"Comment": "v1.1-13-g9fa818a",
+			"Rev": "9fa818a44c2bf1396a17f9d5a3c0f6dd39d2ff8e"
+		},
+		{
+			"ImportPath": "github.com/gorilla/rpc",
+			"Rev": "bd3317b8f6704b1b40e4e705ec9e987a535cd5d3"
 		},
 		{
 			"ImportPath": "github.com/hashicorp/hcl",
@@ -177,10 +196,6 @@
 		{
 			"ImportPath": "github.com/spf13/viper",
 			"Rev": "c1ccc378a054ea8d4e38d8c67f6938d4760b53dd"
-		},
-		{
-			"ImportPath": "github.com/valyala/gorpc",
-			"Rev": "908281bef77441f2d0ec1792189b4032a1dace0c"
 		},
 		{
 			"ImportPath": "github.com/vincent-petithory/dataurl",

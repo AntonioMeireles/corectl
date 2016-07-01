@@ -23,7 +23,6 @@ import (
 	"github.com/TheNewNormal/corectl/components/host/session"
 	"github.com/TheNewNormal/corectl/components/server"
 	"github.com/TheNewNormal/corectl/components/target/coreos"
-	"github.com/blang/semver"
 	"github.com/spf13/cobra"
 )
 
@@ -38,15 +37,15 @@ var (
 )
 
 func lsCommand(cmd *cobra.Command, args []string) (err error) {
-	var i interface{}
 	if _, err = server.Daemon.Running(); err != nil {
 		return session.ErrServerUnreachable
 	}
 
-	if i, err = server.Query("images:list", nil); err != nil {
+	reply := &server.RPCreply{}
+	if reply, err = server.RPCQuery("AvailableImages", &server.RPCquery{}); err != nil {
 		return
 	}
-	local := i.(map[string]semver.Versions)
+	local := reply.Images
 	cli := session.Caller.CmdLine
 	channels := []string{coreos.Channel(cli.GetString("channel"))}
 	if cli.GetBool("all") {

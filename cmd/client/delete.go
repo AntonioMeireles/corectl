@@ -16,7 +16,6 @@
 package main
 
 import (
-	"github.com/blang/semver"
 	"github.com/helm/helm/log"
 
 	"github.com/TheNewNormal/corectl/components/common"
@@ -41,22 +40,23 @@ func rmCommand(cmd *cobra.Command, args []string) (err error) {
 		cli     = session.Caller.CmdLine
 		channel = coreos.Channel(cli.GetString("channel"))
 		version = coreos.Version(cli.GetString("version"))
-		i       interface{}
+		reply   = &server.RPCreply{}
 	)
 	if _, err = server.Daemon.Running(); err != nil {
 		return session.ErrServerUnreachable
 	}
 
-	if i, err = server.Query("images:list", nil); err != nil {
+	if reply, err = server.RPCQuery("AvailableImages", &server.RPCquery{}); err != nil {
 		return
 	}
-	local := i.(map[string]semver.Versions)
+	local := reply.Images
 
 	l := local[channel]
 	if cli.GetBool("old") {
 		for _, v := range l[0 : l.Len()-1] {
-			if _, err = server.Query("images:remove", []string{channel, v.String()}); err != nil {
-				return err
+			if _, err = server.RPCQuery("RemoveImage", &server.RPCquery{
+				Input: []string{channel, v.String()}}); err != nil {
+				return
 			}
 			log.Info("removed %s/%s", channel, v.String())
 		}
@@ -71,8 +71,10 @@ func rmCommand(cmd *cobra.Command, args []string) (err error) {
 			return
 		}
 	}
-	if _, err = server.Query("images:remove", []string{channel, version}); err != nil {
-		return err
+
+	if _, err = server.RPCQuery("RemoveImage", &server.RPCquery{
+		Input: []string{channel, version}}); err != nil {
+		return
 	}
 
 	log.Info("removed %s/%s\n", channel, version)

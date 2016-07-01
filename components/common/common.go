@@ -23,13 +23,12 @@ import (
 
 	"github.com/TheNewNormal/corectl/components/common/assets"
 	"github.com/TheNewNormal/corectl/components/host/session"
-	"github.com/TheNewNormal/corectl/release"
 	"github.com/TheNewNormal/corectl/components/server"
+	"github.com/TheNewNormal/corectl/release"
 	"github.com/blang/semver"
 	"github.com/deis/pkg/log"
 	"github.com/spf13/cobra"
 	"github.com/spf13/cobra/doc"
-	"github.com/valyala/gorpc"
 )
 
 var RootCmdTmpl = &cobra.Command{
@@ -43,17 +42,18 @@ var RootCmdTmpl = &cobra.Command{
 
 func PScommand(cmd *cobra.Command, args []string) (err error) {
 	var (
-		cli    = session.Caller.CmdLine
-		srv, i interface{}
-		pp     []byte
+		cli   = session.Caller.CmdLine
+		reply = &server.RPCreply{}
+		srv   *release.Info
+		pp    []byte
 	)
 	if srv, err = server.Daemon.Running(); err != nil {
-		return session.ErrServerUnreachable
-	}
-	if i, err = server.Query("vm:list", nil); err != nil {
 		return
 	}
-	running := i.(map[string]*server.VMInfo)
+	if reply, err = server.RPCQuery("ActiveVMs", &server.RPCquery{}); err != nil {
+		return
+	}
+	running := reply.Running
 	if cli.GetBool("json") {
 		if pp, err = json.MarshalIndent(running, "", "    "); err == nil {
 			fmt.Println(string(pp))
@@ -62,7 +62,7 @@ func PScommand(cmd *cobra.Command, args []string) (err error) {
 	}
 
 	fmt.Println("\nServer:")
-	srv.(*release.Info).PrettyPrint(true)
+	srv.PrettyPrint(true)
 
 	totalV, totalM, totalC := len(running), 0, 0
 	for _, vm := range running {
@@ -88,7 +88,7 @@ func versionCommand(cmd *cobra.Command, args []string) {
 			fmt.Printf("\nServer:\n Not running\n")
 		} else {
 			fmt.Println("\nServer:")
-			srv.(*release.Info).PrettyPrint(false)
+			srv.PrettyPrint(false)
 			fmt.Println("\nClient:")
 			session.Caller.Meta.PrettyPrint(false)
 		}
@@ -130,20 +130,11 @@ func STARTup(r *cobra.Command) (err error) {
 		return
 	}
 	session.Caller.CmdLine.BindPFlags(r.PersistentFlags())
-	if session.AppName() == "corectld" {
-		session.Caller.RPCclient = gorpc.NewTCPClient("127.0.0.1:2511")
-	} else {
-		session.Caller.RPCclient =
-			gorpc.NewTCPClient(session.Caller.CmdLine.GetString("server") +
-				":2511")
+	if session.AppName() != "corectld" {
+		session.Caller.ServerAddress =
+			session.Caller.CmdLine.GetString("server") + ":2511"
 	}
 
-	server.RPCservices()
-	session.Caller.RPCclient.LogError = gorpc.NilErrorLogger
-	session.Caller.RPCclient.Start()
-	defer session.Caller.RPCclient.Stop()
-	session.Caller.RPCdispatcher =
-		session.Caller.Services.NewFuncClient(session.Caller.RPCclient)
 	return r.Execute()
 }
 
