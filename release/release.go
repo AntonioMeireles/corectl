@@ -32,7 +32,7 @@ var (
 	// BuildDate of running blob
 	BuildDate string
 	// ShortBanner ...
-	ShortBanner = "CoreOS over OS X made simple."
+	ShortBanner = "CoreOS over macOS made simple."
 	// Banner ...
 	Banner = fmt.Sprintf("%s <%s>\n%s\n", ShortBanner,
 		"http://github.com/TheNewNormal/corectl",

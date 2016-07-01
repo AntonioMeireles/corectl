@@ -25,5 +25,5 @@ corectld start
 ```
 
 ### SEE ALSO
-* [corectld](corectld.md)	 - CoreOS over OS X made simple.
+* [corectld](corectld.md)	 - CoreOS over macOS made simple.
 

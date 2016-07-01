@@ -1,11 +1,11 @@
-# CoreOS _over_ OS X made simple
+# CoreOS _over_ macOS made simple
 ###### built on top of [xhyve](https://github.com/xhyve-xyz/xhyve)'s _golang_ [bindings](https://github.com/hooklift/xhyve)
 
 **caveats**
 -----------
 
  > - `xhyve`, on top of we built, is a young project, so expect bugs!
- > - You must be running OS X Yosemite, 10.10.3, or later on a 2010,
+ > - You must be running macOS Yosemite, 10.10.3, or later on a 2010,
  >   or later, Mac (i.e. one with a CPU that supports EPT) for things to work.
  > - if you use **any** version of VirtualBox prior to VirtualBox 4.3.30 then
  >   `xhyve` will crash your system either if VirtualBox is running, or had been
@@ -70,7 +70,7 @@ that will come handy when you come to play with `docker` volumes later...
 
 ### usage
 ```
-CoreOS over OS X made simple. <http://github.com/TheNewNormal/corectl>
+CoreOS over macOS made simple. <http://github.com/TheNewNormal/corectl>
 Copyright (c) 2015-2016, António Meireles
 
 Usage:
@@ -203,18 +203,18 @@ or ...
 
 ## projects using `corectl`
 
-- [Rimas Mocevicius](https://github.com/rimusz) entire toolset of OS X GUI apps
+- [Rimas Mocevicius](https://github.com/rimusz) entire toolset of macOS GUI apps
 is now using `corectl` underneath.
-  - [coreos-osx](https://github.com/TheNewNormal/coreos-osx) - **CoreOS VM for OS X**
+  - [coreos-osx](https://github.com/TheNewNormal/coreos-osx) - **CoreOS VM for macOS**
   - [kube-solo-osx](https://github.com/TheNewNormal/kube-solo-osx) -
- **Kubernetes Solo Cluster for OS X**
+ **Kubernetes Solo Cluster for macOS**
   - [kube-cluster-osx](https://github.com/TheNewNormal/kube-cluster-osx) -
- **Multi node Kubernetes Cluster for OS X**
+ **Multi node Kubernetes Cluster for macOS**
 
 ## acknowledgements
 
 -  [Michael Steil](https://github.com/mist64) for releasing in the wild his
-   awesome [xhyve](https://github.com/mist64/xhyve) lightweight OS X
+   awesome [xhyve](https://github.com/mist64/xhyve) lightweight macOS
    virtualization solution and [Jeremy Sequoia](https://github.com/jeremyhu),
    from Apple, for taking stewardship of it allowing it to move
    [forward](https://github.com/xhyve-xyz).

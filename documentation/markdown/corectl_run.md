@@ -37,5 +37,5 @@ corectl run
 ```
 
 ### SEE ALSO
-* [corectl](corectl.md)	 - CoreOS over OS X made simple.
+* [corectl](corectl.md)	 - CoreOS over macOS made simple.
 

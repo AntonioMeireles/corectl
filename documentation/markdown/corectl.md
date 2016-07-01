@@ -1,11 +1,11 @@
 ## corectl
 
-CoreOS over OS X made simple.
+CoreOS over macOS made simple.
 
 ### Synopsis
 
 
-CoreOS over OS X made simple. <http://github.com/TheNewNormal/corectl>
+CoreOS over macOS made simple. <http://github.com/TheNewNormal/corectl>
 Copyright (c) 2015-2016, António Meireles
 
 
