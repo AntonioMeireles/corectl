@@ -132,6 +132,7 @@ func (s *RPCservice) UUIDtoMACaddr(r *http.Request,
 			// XXX
 			if MAC, err =
 				uuid2ip.GuestMACfromUUID(UUID); err == nil {
+				// var ip string
 				// if ip, err = uuid2ip.GuestIPfromMAC(MAC); err == nil {
 				// 	log.Info("GUEST IP will be %v", ip)
 				break
@@ -145,7 +146,7 @@ func (s *RPCservice) UUIDtoMACaddr(r *http.Request,
 			UUID = uuid.NewV4().String()
 		}
 	}
-	reply.Output = []string{MAC, UUID}
+	reply.Output = []string{MAC, strings.ToUpper(UUID)}
 	return
 }
 

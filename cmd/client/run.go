@@ -127,10 +127,12 @@ func vmBootstrap(args *viper.Viper) (vm *server.VMInfo, err error) {
 	if vm.UUID == "random" {
 		vm.UUID = uuid.NewV4().String()
 	} else if _, err = uuid.FromString(vm.UUID); err != nil {
+
 		log.Warn("%s not a valid UUID as it doesn't follow RFC "+
 			"4122. %s\n", vm.UUID, "Using a randomly generated one")
 		vm.UUID = uuid.NewV4().String()
 	}
+	vm.UUID = strings.ToUpper(vm.UUID)
 
 	reply, err = server.RPCQuery("UUIDtoMACaddr",
 		&server.RPCquery{Input: []string{vm.UUID, args.GetString("uuid")}})
