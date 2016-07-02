@@ -16,15 +16,16 @@
 package main
 
 import (
+	"encoding/binary"
 	"fmt"
 	"strings"
+	"syscall"
 
 	"github.com/TheNewNormal/corectl/components/host/session"
 	"github.com/TheNewNormal/corectl/components/server"
 	"github.com/TheNewNormal/corectl/components/target/coreos"
 	"github.com/helm/helm/log"
 	"github.com/satori/go.uuid"
-	"github.com/shirou/gopsutil/mem"
 	"github.com/spf13/cobra"
 	"github.com/spf13/pflag"
 	"github.com/spf13/viper"
@@ -66,8 +67,9 @@ func runCommand(cmd *cobra.Command, args []string) (err error) {
 
 func vmBootstrap(args *viper.Viper) (vm *server.VMInfo, err error) {
 	var (
-		reply  = &server.RPCreply{}
-		pSlice = func(plain []string) []string {
+		reply           = &server.RPCreply{}
+		HostPhysicalMem uint64
+		pSlice          = func(plain []string) []string {
 			// getting around https://github.com/spf13/viper/issues/112
 			var sliced []string
 			for _, x := range plain {
@@ -78,6 +80,14 @@ func vmBootstrap(args *viper.Viper) (vm *server.VMInfo, err error) {
 				}
 			}
 			return sliced
+		}
+		// only thing we need from github.com shirou/gopsutil
+		getHwMemsize = func() (v uint64, err error) {
+			var tStr string
+			if tStr, err = syscall.Sysctl("hw.memsize"); err == nil {
+				v = uint64(binary.LittleEndian.Uint64([]byte(tStr + "\x00")))
+			}
+			return
 		}
 	)
 	vm = new(server.VMInfo)
@@ -115,9 +125,12 @@ func vmBootstrap(args *viper.Viper) (vm *server.VMInfo, err error) {
 	for _, v := range reply.Running {
 		totalM = totalM + v.Memory
 	}
-	v, _ := mem.VirtualMemory()
 
-	if uint64(totalM+vm.Memory) > v.Total/1024/1024*2/3 {
+	if HostPhysicalMem, err = getHwMemsize(); err != nil {
+		return
+	}
+
+	if uint64(totalM+vm.Memory) > HostPhysicalMem/1024/1024*2/3 {
 		err = fmt.Errorf("Aborted. Aggregated VMs memory usage would " +
 			"become higher than 66pc of total host physical memory which " +
 			"would lead to system unstability")
