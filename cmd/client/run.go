@@ -42,9 +42,8 @@ var (
 
 func runCommand(cmd *cobra.Command, args []string) (err error) {
 	var (
-		reply = &server.RPCreply{}
-		vm    *server.VMInfo
-		cli   = session.Caller.CmdLine
+		vm  *server.VMInfo
+		cli = session.Caller.CmdLine
 	)
 
 	if _, err = server.Daemon.Running(); err != nil {
@@ -53,8 +52,13 @@ func runCommand(cmd *cobra.Command, args []string) (err error) {
 	if vm, err = vmBootstrap(cli); err != nil {
 		return
 	}
-	reply, err = server.RPCQuery("Run", &server.RPCquery{VM: vm})
-	if err != nil {
+	return bootIt(vm)
+}
+
+func bootIt(vm *server.VMInfo) (err error) {
+	var reply = &server.RPCreply{}
+	if reply, err =
+		server.RPCQuery("Run", &server.RPCquery{VM: vm}); err != nil {
 		return
 	}
 	log.Info("'%v' started successfuly with address %v and PID %v",

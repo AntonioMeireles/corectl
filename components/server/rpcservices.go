@@ -31,7 +31,7 @@ import (
 	"github.com/TheNewNormal/corectl/components/host/session"
 	"github.com/TheNewNormal/corectl/release"
 	"github.com/blang/semver"
-	"github.com/deis/pkg/log"
+	"github.com/helm/helm/log"
 	"github.com/gorilla/rpc"
 	"github.com/gorilla/rpc/json"
 	"github.com/satori/go.uuid"

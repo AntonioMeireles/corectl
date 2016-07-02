@@ -23,7 +23,6 @@ import (
 	"sort"
 	"strings"
 
-	"github.com/deis/pkg/log"
 	"github.com/spf13/cobra"
 	"github.com/spf13/pflag"
 	"github.com/spf13/viper"
@@ -108,24 +107,15 @@ func loadCommand(cmd *cobra.Command, args []string) (err error) {
 	}
 	sort.Strings(ordered)
 	for slot, name := range ordered {
-		var (
-			vm    *server.VMInfo
-			reply = &server.RPCreply{}
-		)
+		var vm *server.VMInfo
 
 		fmt.Println("> booting", name, slot)
 		if vm, err = vmBootstrap(vmDefs[name]); err != nil {
 			return
 		}
-		if reply, err = server.RPCQuery("Run", &server.RPCquery{VM: vm}); err != nil {
+		if err = bootIt(vm); err != nil {
 			return
 		}
-		log.Info("'%v' started successfuly with address %v and PID %v",
-			reply.VM.Name, reply.VM.PublicIP, reply.VM.Pid)
-		log.Info("'%v' boot logs can be found at '%v'",
-			reply.VM.Name, reply.VM.Log())
-		log.Info("'%v' console can be found at '%v'",
-			reply.VM.Name, reply.VM.TTY())
 	}
 	return
 }

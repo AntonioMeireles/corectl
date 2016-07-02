@@ -24,7 +24,7 @@ import (
 	"strings"
 
 	"github.com/TheNewNormal/corectl/components/host/session"
-	"github.com/deis/pkg/log"
+	"github.com/helm/helm/log"
 )
 
 func detectVPN() (utun []string, err error) {
