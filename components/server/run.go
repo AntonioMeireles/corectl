@@ -33,8 +33,8 @@ import (
 	"time"
 
 	"github.com/TheNewNormal/corectl/components/host/session"
-	"github.com/helm/helm/log"
 	"github.com/dustin/go-humanize"
+	"github.com/helm/helm/log"
 	"golang.org/x/crypto/ssh"
 )
 
